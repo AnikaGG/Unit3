@@ -1,0 +1,9 @@
+[workspace]
+members = ["frenderer", "examples/*"]
+exclude = ["target", "content", "examples/engine-fancy", "examples/engine-fancy-game"]
+resolver = "2"
+
+[profile.dev.package.'*']
+opt-level = 3
+[profile.release]
+debug=true

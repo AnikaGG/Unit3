@@ -1,0 +1,12 @@
+/Users/Aniku/cs181g/frenderer/target/debug/deps/half-22884c8f8949186f.rmeta: /Users/Aniku/.cargo/registry/src/index.crates.io-6f17d22bba15001f/half-2.2.1/src/lib.rs /Users/Aniku/.cargo/registry/src/index.crates.io-6f17d22bba15001f/half-2.2.1/src/bfloat.rs /Users/Aniku/.cargo/registry/src/index.crates.io-6f17d22bba15001f/half-2.2.1/src/bfloat/convert.rs /Users/Aniku/.cargo/registry/src/index.crates.io-6f17d22bba15001f/half-2.2.1/src/binary16.rs /Users/Aniku/.cargo/registry/src/index.crates.io-6f17d22bba15001f/half-2.2.1/src/binary16/convert.rs /Users/Aniku/.cargo/registry/src/index.crates.io-6f17d22bba15001f/half-2.2.1/src/leading_zeros.rs /Users/Aniku/.cargo/registry/src/index.crates.io-6f17d22bba15001f/half-2.2.1/src/slice.rs /Users/Aniku/.cargo/registry/src/index.crates.io-6f17d22bba15001f/half-2.2.1/src/vec.rs
+
+/Users/Aniku/cs181g/frenderer/target/debug/deps/half-22884c8f8949186f.d: /Users/Aniku/.cargo/registry/src/index.crates.io-6f17d22bba15001f/half-2.2.1/src/lib.rs /Users/Aniku/.cargo/registry/src/index.crates.io-6f17d22bba15001f/half-2.2.1/src/bfloat.rs /Users/Aniku/.cargo/registry/src/index.crates.io-6f17d22bba15001f/half-2.2.1/src/bfloat/convert.rs /Users/Aniku/.cargo/registry/src/index.crates.io-6f17d22bba15001f/half-2.2.1/src/binary16.rs /Users/Aniku/.cargo/registry/src/index.crates.io-6f17d22bba15001f/half-2.2.1/src/binary16/convert.rs /Users/Aniku/.cargo/registry/src/index.crates.io-6f17d22bba15001f/half-2.2.1/src/leading_zeros.rs /Users/Aniku/.cargo/registry/src/index.crates.io-6f17d22bba15001f/half-2.2.1/src/slice.rs /Users/Aniku/.cargo/registry/src/index.crates.io-6f17d22bba15001f/half-2.2.1/src/vec.rs
+
+/Users/Aniku/.cargo/registry/src/index.crates.io-6f17d22bba15001f/half-2.2.1/src/lib.rs:
+/Users/Aniku/.cargo/registry/src/index.crates.io-6f17d22bba15001f/half-2.2.1/src/bfloat.rs:
+/Users/Aniku/.cargo/registry/src/index.crates.io-6f17d22bba15001f/half-2.2.1/src/bfloat/convert.rs:
+/Users/Aniku/.cargo/registry/src/index.crates.io-6f17d22bba15001f/half-2.2.1/src/binary16.rs:
+/Users/Aniku/.cargo/registry/src/index.crates.io-6f17d22bba15001f/half-2.2.1/src/binary16/convert.rs:
+/Users/Aniku/.cargo/registry/src/index.crates.io-6f17d22bba15001f/half-2.2.1/src/leading_zeros.rs:
+/Users/Aniku/.cargo/registry/src/index.crates.io-6f17d22bba15001f/half-2.2.1/src/slice.rs:
+/Users/Aniku/.cargo/registry/src/index.crates.io-6f17d22bba15001f/half-2.2.1/src/vec.rs:
