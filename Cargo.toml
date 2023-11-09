@@ -1,6 +1,6 @@
 [workspace]
-members = ["frenderer", "examples/*"]
-exclude = ["target", "content", "examples/engine-fancy", "examples/engine-fancy-game"]
+members = ["frenderer", "anika_evelyn/*"]
+exclude = ["target", "content", "examples/*"]
 resolver = "2"
 
 [profile.dev.package.'*']
