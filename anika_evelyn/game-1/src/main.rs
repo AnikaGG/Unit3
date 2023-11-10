@@ -6,7 +6,6 @@ use rand::Rng;
 const W: f32 = 320.0;
 const H: f32 = 240.0;
 const GUY_SPEED: f32 = 2.0;
-const BEAR_SPEED: f32 = 4.0;
 const SPRITE_MAX: usize = 16;
 const CATCH_DISTANCE: f32 = 16.0;
 const COLLISION_STEPS: usize = 3;
@@ -167,10 +166,32 @@ impl engine::Game for Game {
         }
     }
     fn update(&mut self, engine: &mut Engine) {
-        let dir = engine.input.key_axis(engine::Key::Left, engine::Key::Right);
-        self.guy.pos.x += dir * GUY_SPEED;
+        let xdir = engine.input.key_axis(engine::Key::Left, engine::Key::Right);
+        self.guy.pos.x += xdir * GUY_SPEED;
+        let ydir = engine.input.key_axis(engine::Key::Down, engine::Key::Up);
+        self.guy.pos.y += ydir * GUY_SPEED;
         
         // TODO: move bears
+        let mut rng = rand::thread_rng();
+        for (bear, i) in self.bears.iter_mut().zip(0..2) {
+            let xdir = if rng.gen_range(0..2) > 0 {1.0} else {-1.0};
+            let ydir = if rng.gen_range(0..2) > 0 {1.0} else {-1.0};
+            bear.pos.x += xdir * 2.0;
+            bear.pos.y += ydir * 2.0;
+            // keep bear in frame
+            if bear.pos.x >= W {
+                bear.pos.x = W - 1.0;
+            }
+            if bear.pos.x <= 0.0 {
+                bear.pos.x = 1.0;
+            }
+            if bear.pos.y >= H {
+                bear.pos.y = H - 1.0;
+            }
+            if bear.pos.y <= 0.0 {
+                bear.pos.y = 1.0;
+            }
+        }
 
         // TODO: check tree collision
        
