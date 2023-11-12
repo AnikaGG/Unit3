@@ -3,9 +3,11 @@
 use engine::wgpu;
 use engine::{geom::*, Camera, Engine, SheetRegion, Transform, Zeroable};
 use rand::Rng;
-const W: f32 = 320.0;
-const H: f32 = 240.0;
-const GUY_SPEED: f32 = 2.0;
+const world_W: f32 = 320.0;
+const world_H: f32 = 240.0;
+const W: f32 = 75.0;
+const H: f32 = 50.0;
+const GUY_SPEED: f32 = 1.0;
 const SPRITE_MAX: usize = 16;
 const CATCH_DISTANCE: f32 = 16.0;
 const COLLISION_STEPS: usize = 3;
@@ -57,6 +59,7 @@ impl engine::Game for Game {
         // add background group
         let background_img = image::open("content/background_grass.jpeg").unwrap().into_rgba8();
         let background_tex = engine.renderer.gpu.create_texture(
+            //createarraytexture
             &background_img,
             wgpu::TextureFormat::Rgba8UnormSrgb,
             background_img.dimensions(),
@@ -130,22 +133,22 @@ impl engine::Game for Game {
 
         let guy = Guy {
             pos: Vec2 {
-                x: W / 2.0,
+                x: world_W/2.0,
                 y: 24.0,
             },
         };
 
         let mut rng = rand::thread_rng();
         let trees: Vec<Tree> = (0..16)
-        .map(|_| Tree {pos: Vec2 {x: rng.gen_range(0.0..W), y: rng.gen_range(0.0..H)}})
+        .map(|_| Tree {pos: Vec2 {x: rng.gen_range(0.0..world_W-1.0), y: rng.gen_range(0.0..world_H-1.0)}})
         .collect();
 
         let logs: Vec<Log> = (0..16)
-        .map(|_| Log {pos: Vec2 {x: rng.gen_range(0.0..W), y: rng.gen_range(0.0..H)}})
+        .map(|_| Log {pos: Vec2 {x: rng.gen_range(0.0..world_W-1.0), y: rng.gen_range(0.0..world_H-1.0)}})
         .collect();
 
         let bears: Vec<Bear> = (0..2)
-        .map(|_| Bear {pos: Vec2 {x: rng.gen_range(0.0..W), y: rng.gen_range(0.0..H)}})
+        .map(|_| Bear {pos: Vec2 {x: rng.gen_range(0.0..world_W), y: rng.gen_range(0.0..world_H)}})
         .collect();
         
 
@@ -166,6 +169,7 @@ impl engine::Game for Game {
         }
     }
     fn update(&mut self, engine: &mut Engine) {
+        //TBD: can be put in char_actions
         let xdir = engine.input.key_axis(engine::Key::Left, engine::Key::Right);
         self.guy.pos.x += xdir * GUY_SPEED;
         let ydir = engine.input.key_axis(engine::Key::Down, engine::Key::Up);
@@ -179,14 +183,14 @@ impl engine::Game for Game {
             bear.pos.x += xdir * 2.0;
             bear.pos.y += ydir * 2.0;
             // keep bear in frame
-            if bear.pos.x >= W {
-                bear.pos.x = W - 1.0;
+            if bear.pos.x >= world_W {
+                bear.pos.x = world_W - 1.0;
             }
             if bear.pos.x <= 0.0 {
                 bear.pos.x = 1.0;
             }
-            if bear.pos.y >= H {
-                bear.pos.y = H - 1.0;
+            if bear.pos.y >= world_H {
+                bear.pos.y = world_H - 1.0;
             }
             if bear.pos.y <= 0.0 {
                 bear.pos.y = 1.0;
@@ -204,10 +208,10 @@ impl engine::Game for Game {
         let (trfs_bg, uvs_bg) = engine.renderer.sprites.get_sprites_mut(0);
         trfs_bg[0] = AABB {
             center: Vec2 {
-                x: W / 2.0,
-                y: H / 2.0,
+                x: world_W / 2.0,
+                y: world_H / 2.0,
             },
-            size: Vec2 { x: W, y: H },
+            size: Vec2 { x: world_W, y: world_H },
         }
         .into();
         uvs_bg[0] = SheetRegion::new(0, 0, 0, 16, 1920, 1280);
@@ -216,7 +220,7 @@ impl engine::Game for Game {
         let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(1);
         trfs[0] = AABB {
             center: self.guy.pos,
-            size: Vec2 { x: 16.0, y: 22.0 },
+            size: Vec2 { x: 12.0, y: 16.5 },
         }
         .into();
         uvs[0] = SheetRegion::new(0, 177, 1, 1, 166, 232);
@@ -226,18 +230,18 @@ impl engine::Game for Game {
         for i in 0..2 {
             trfs_bears[i] = AABB {
                 center: self.bears[i].pos,
-                size: Vec2 { x: 16.0, y: 22.0 },
+                size: Vec2 { x: 12.0, y: 16.5 },
             }.into();
-            uvs_bears[i] = SheetRegion::new(0, 211, 1, 5, 200, 270);
+            uvs_bears[i] = SheetRegion::new(0, 211, 1, 1, 200, 270);
         }
         // set logs
         let (trfs_log, uvs_log) = engine.renderer.sprites.get_sprites_mut(3);
         for i in 0..16 {
             trfs_log[i] = AABB {
                 center: self.logs[i].pos,
-                size: Vec2 { x: 18.0, y: 8.0 },
+                size: Vec2 { x: 9.0, y: 4.0 },
             }.into();
-            uvs_log[i] = SheetRegion::new(0, 809, 1, 3, 672, 224);
+            uvs_log[i] = SheetRegion::new(0, 809, 1, 1, 672, 224);
         }
         // set trees
         let (trfs_tree, uvs_tree) = engine.renderer.sprites.get_sprites_mut(4);
@@ -246,7 +250,7 @@ impl engine::Game for Game {
                 center: self.trees[i].pos,
                 size: Vec2 { x: 16.0, y: 16.0 },
             }.into();
-            uvs_tree[i] = SheetRegion::new(0, 809, 227, 5, 294, 294);
+            uvs_tree[i] = SheetRegion::new(0, 809, 227, 3, 294, 294);
         }
 
         let score_str = self.score.to_string();
@@ -291,10 +295,15 @@ impl engine::Game for Game {
             .renderer
             .sprites
             .upload_sprites(&engine.renderer.gpu, 4, 0..16);
+        // engine
+        //     .renderer
+        //     .sprites
+        //     .set_camera_all(&engine.renderer.gpu, self.camera);
+        self.camera.screen_pos = [self.guy.pos.x-(W/2.0), self.guy.pos.y-(H/2.0)];
         engine
             .renderer
             .sprites
-            .set_camera_all(&engine.renderer.gpu, self.camera);
+            .set_camera_all(&engine.renderer.gpu, self.camera)
     }
 }
 fn main() {
