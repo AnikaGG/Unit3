@@ -42,7 +42,7 @@ impl engine::Game for Game {
     fn new(engine: &mut Engine) -> Self {
         let camera = Camera {
             screen_pos: [0.0, 0.0],
-            screen_size: [W, H],
+            screen_size: [world_W, world_H],
         };
         #[cfg(target_arch = "wasm32")]
         let sprite_img = {
@@ -55,6 +55,8 @@ impl engine::Game for Game {
 
         #[cfg(not(target_arch = "wasm32"))]
         // SPRITE GROUPS: 0: bg, 1: man, 2: bear, 3: log, 4: trees
+        //NEW
+        // SPRITE GROUPS: 0: bg, 1: man&bear, 2: log, 3: trees
 
         // add background group
         let background_img = image::open("content/background_grass.jpeg").unwrap().into_rgba8();
@@ -73,35 +75,56 @@ impl engine::Game for Game {
             camera,
         );
 
-        // add man group
+        // // add man group
         let sprite_img = image::open("content/man_sheet.png").unwrap().into_rgba8();
-        let sprite_tex = engine.renderer.gpu.create_texture(
-            &sprite_img,
+        // let sprite_tex = engine.renderer.gpu.create_texture(
+        //     &sprite_img,
+        //     wgpu::TextureFormat::Rgba8UnormSrgb,
+        //     sprite_img.dimensions(),
+        //     Some("spr-demo.png"),
+        // );
+        // engine.renderer.sprites.add_sprite_group(
+        //     &engine.renderer.gpu,
+        //     &sprite_tex,
+        //     vec![Transform::zeroed(); 1], // just one man
+        //     vec![SheetRegion::zeroed(); 1],
+        //     camera,
+        // );
+
+        // // add bear group
+        let bear_img = image::open("content/bear_sheet.png").unwrap().into_rgba8();
+        // let bear_tex = engine.renderer.gpu.create_texture(
+        //     &bear_img,
+        //     wgpu::TextureFormat::Rgba8UnormSrgb,
+        //     bear_img.dimensions(),
+        //     Some("bear-demo.png"),
+        // );
+        // engine.renderer.sprites.add_sprite_group(
+        //     &engine.renderer.gpu,
+        //     &bear_tex,
+        //     vec![Transform::zeroed(); 2], // 2 bears
+        //     vec![SheetRegion::zeroed(); 2],
+        //     camera,
+        // );
+
+        // let comb_x = sprite_img.dimensions().0 + bear_img.dimensions().0;
+        // let comb_y = sprite_img.dimensions().1 + (bear_img.dimensions().1);
+        // println!("Sprite image dimensions: {:?}", sprite_img.dimensions());
+        // println!("Bear image dimensions: {:?}", bear_img.dimensions());
+        // println!("combined image dimensions: {:?}, {:?}", comb_x, comb_y);
+        //array texture
+        let sprite_tex = engine.renderer.gpu.create_array_texture(
+            &[&sprite_img, &bear_img], 
             wgpu::TextureFormat::Rgba8UnormSrgb,
             sprite_img.dimensions(),
-            Some("spr-demo.png"),
+            Some("characters.png")
         );
+
         engine.renderer.sprites.add_sprite_group(
             &engine.renderer.gpu,
             &sprite_tex,
-            vec![Transform::zeroed(); 1], // just one man
-            vec![SheetRegion::zeroed(); 1],
-            camera,
-        );
-
-        // add bear group
-        let bear_img = image::open("content/bear_sheet.png").unwrap().into_rgba8();
-        let bear_tex = engine.renderer.gpu.create_texture(
-            &bear_img,
-            wgpu::TextureFormat::Rgba8UnormSrgb,
-            bear_img.dimensions(),
-            Some("bear-demo.png"),
-        );
-        engine.renderer.sprites.add_sprite_group(
-            &engine.renderer.gpu,
-            &bear_tex,
-            vec![Transform::zeroed(); 2], // 2 bears
-            vec![SheetRegion::zeroed(); 2],
+            vec![Transform::zeroed(); 3],
+            vec![SheetRegion::zeroed(); 3],
             camera,
         );
 
@@ -112,7 +135,6 @@ impl engine::Game for Game {
             setting_img.dimensions(),
             Some("setting-demo.png"),
         );
-
         // add log group
         engine.renderer.sprites.add_sprite_group(
             &engine.renderer.gpu,
@@ -221,21 +243,47 @@ impl engine::Game for Game {
         trfs[0] = AABB {
             center: self.guy.pos,
             size: Vec2 { x: 12.0, y: 16.5 },
-        }
-        .into();
+        }.into();
         uvs[0] = SheetRegion::new(0, 177, 1, 1, 166, 232);
 
-        // set bears
-        let (trfs_bears, uvs_bears) = engine.renderer.sprites.get_sprites_mut(2);
         for i in 0..2 {
-            trfs_bears[i] = AABB {
+            trfs[1+i] = AABB {  // Use correct index for bears
                 center: self.bears[i].pos,
                 size: Vec2 { x: 12.0, y: 16.5 },
             }.into();
-            uvs_bears[i] = SheetRegion::new(0, 211, 1, 1, 200, 270);
+            uvs[1+i] = SheetRegion::new(1, 211, 1, 1, 200, 270);
         }
+
+        // set bears
+        for i in 0..2 {
+            trfs[1+i] = AABB {  // Use correct index for bears
+                center: self.bears[i].pos,
+                size: Vec2 { x: 12.0, y: 16.5 },
+            }.into();
+            uvs[1+i] = SheetRegion::new(1, 211, 1, 1, 200, 270);
+        }
+
+        // // set guy
+        // let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(1);
+        // trfs[0] = AABB {
+        //     center: self.guy.pos,
+        //     size: Vec2 { x: 12.0, y: 16.5 },
+        // }
+        // .into();
+        // uvs[0] = SheetRegion::new(0, 177, 1, 1, 166, 232);
+
+        // // set bears
+        // let (trfs_bears, uvs_bears) = engine.renderer.sprites.get_sprites_mut(1);
+        // for i in 0..2 {
+        //     trfs[i] = AABB {
+        //         center: self.bears[i].pos,
+        //         size: Vec2 { x: 12.0, y: 16.5 },
+        //     }.into();
+        //     uvs[i] = SheetRegion::new(0, 211, 1, 1, 200, 270);
+        // }
+
         // set logs
-        let (trfs_log, uvs_log) = engine.renderer.sprites.get_sprites_mut(3);
+        let (trfs_log, uvs_log) = engine.renderer.sprites.get_sprites_mut(2);
         for i in 0..16 {
             trfs_log[i] = AABB {
                 center: self.logs[i].pos,
@@ -244,7 +292,7 @@ impl engine::Game for Game {
             uvs_log[i] = SheetRegion::new(0, 809, 1, 1, 672, 224);
         }
         // set trees
-        let (trfs_tree, uvs_tree) = engine.renderer.sprites.get_sprites_mut(4);
+        let (trfs_tree, uvs_tree) = engine.renderer.sprites.get_sprites_mut(3);
         for i in 0..16 {
             trfs_tree[i] = AABB {
                 center: self.trees[i].pos,
@@ -274,7 +322,6 @@ impl engine::Game for Game {
         //     .into(),
         //     16.0,
         // );
-
         engine
             .renderer
             .sprites
@@ -282,19 +329,19 @@ impl engine::Game for Game {
         engine
             .renderer
             .sprites
-            .upload_sprites(&engine.renderer.gpu, 1, 0..1);
+            .upload_sprites(&engine.renderer.gpu, 1, 0..3);
         engine
             .renderer
             .sprites
-            .upload_sprites(&engine.renderer.gpu, 2, 0..2);
+            .upload_sprites(&engine.renderer.gpu, 2, 0..16);
         engine
             .renderer
             .sprites
             .upload_sprites(&engine.renderer.gpu, 3, 0..16);
-        engine
-            .renderer
-            .sprites
-            .upload_sprites(&engine.renderer.gpu, 4, 0..16);
+        // engine
+        //     .renderer
+        //     .sprites
+        //     .upload_sprites(&engine.renderer.gpu, 4, 0..16);
         // engine
         //     .renderer
         //     .sprites
