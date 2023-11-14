@@ -54,7 +54,7 @@ impl engine::Game for Game {
         };
 
         #[cfg(not(target_arch = "wasm32"))]
-        // SPRITE GROUPS: 0: bg, 1: man, 2: bear, 3: log, 4: trees
+        // SPRITE GROUPS: 0: bg, 1: man (0), bears (1-2), logs (3-18), trees (19-34)
 
         // add background group
         let background_img = image::open("content/background_grass.jpeg").unwrap().into_rgba8();
@@ -74,7 +74,7 @@ impl engine::Game for Game {
         );
 
         // add man group
-        let sprite_img = image::open("content/man_sheet.png").unwrap().into_rgba8();
+        let sprite_img = image::open("content/spritesheet.png").unwrap().into_rgba8();
         let sprite_tex = engine.renderer.gpu.create_texture(
             &sprite_img,
             wgpu::TextureFormat::Rgba8UnormSrgb,
@@ -84,50 +84,8 @@ impl engine::Game for Game {
         engine.renderer.sprites.add_sprite_group(
             &engine.renderer.gpu,
             &sprite_tex,
-            vec![Transform::zeroed(); 1], // just one man
-            vec![SheetRegion::zeroed(); 1],
-            camera,
-        );
-
-        // add bear group
-        let bear_img = image::open("content/bear_sheet.png").unwrap().into_rgba8();
-        let bear_tex = engine.renderer.gpu.create_texture(
-            &bear_img,
-            wgpu::TextureFormat::Rgba8UnormSrgb,
-            bear_img.dimensions(),
-            Some("bear-demo.png"),
-        );
-        engine.renderer.sprites.add_sprite_group(
-            &engine.renderer.gpu,
-            &bear_tex,
-            vec![Transform::zeroed(); 2], // 2 bears
-            vec![SheetRegion::zeroed(); 2],
-            camera,
-        );
-
-        let setting_img = image::open("content/setting_sheet.png").unwrap().into_rgba8();
-        let setting_tex = engine.renderer.gpu.create_texture(
-            &setting_img,
-            wgpu::TextureFormat::Rgba8UnormSrgb,
-            setting_img.dimensions(),
-            Some("setting-demo.png"),
-        );
-
-        // add log group
-        engine.renderer.sprites.add_sprite_group(
-            &engine.renderer.gpu,
-            &setting_tex,
-            vec![Transform::zeroed(); SPRITE_MAX],
-            vec![SheetRegion::zeroed(); SPRITE_MAX],
-            camera,
-        );
-
-        // add tree group
-        engine.renderer.sprites.add_sprite_group(
-            &engine.renderer.gpu,
-            &setting_tex,
-            vec![Transform::zeroed(); SPRITE_MAX],
-            vec![SheetRegion::zeroed(); SPRITE_MAX],
+            vec![Transform::zeroed(); 35], // man (0), bears (1-2), logs (3-18), trees (19-34)
+            vec![SheetRegion::zeroed(); 35],
             camera,
         );
 
@@ -214,43 +172,44 @@ impl engine::Game for Game {
             size: Vec2 { x: world_W, y: world_H },
         }
         .into();
-        uvs_bg[0] = SheetRegion::new(0, 0, 0, 16, 1920, 1280);
+        uvs_bg[0] = SheetRegion::new(0, 0, 0, 6, 1920, 1280);
+
+        // set sprites
+        let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(1);
 
         // set guy
-        let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(1);
         trfs[0] = AABB {
             center: self.guy.pos,
             size: Vec2 { x: 12.0, y: 16.5 },
         }
         .into();
-        uvs[0] = SheetRegion::new(0, 177, 1, 1, 166, 232);
+        uvs[0] = SheetRegion::new(0, 1363, 227, 4, 166, 232);
 
         // set bears
-        let (trfs_bears, uvs_bears) = engine.renderer.sprites.get_sprites_mut(2);
-        for i in 0..2 {
-            trfs_bears[i] = AABB {
-                center: self.bears[i].pos,
-                size: Vec2 { x: 12.0, y: 16.5 },
+        for i in 1..3 {
+            trfs[i] = AABB {
+                center: self.bears[i-1].pos,
+                size: Vec2 { x: 32.0, y: 17.5 },
             }.into();
-            uvs_bears[i] = SheetRegion::new(0, 211, 1, 1, 200, 270);
+            uvs[i] = SheetRegion::new(0, 973, 1, 3, 64, 33);
         }
+
         // set logs
-        let (trfs_log, uvs_log) = engine.renderer.sprites.get_sprites_mut(3);
-        for i in 0..16 {
-            trfs_log[i] = AABB {
-                center: self.logs[i].pos,
+        for i in 3..19 {
+            trfs[i] = AABB {
+                center: self.logs[i-3].pos,
                 size: Vec2 { x: 9.0, y: 4.0 },
             }.into();
-            uvs_log[i] = SheetRegion::new(0, 809, 1, 1, 672, 224);
+            uvs[i] = SheetRegion::new(0, 1171, 1, 2, 672, 224);
         }
+
         // set trees
-        let (trfs_tree, uvs_tree) = engine.renderer.sprites.get_sprites_mut(4);
-        for i in 0..16 {
-            trfs_tree[i] = AABB {
-                center: self.trees[i].pos,
+        for i in 19..34 {
+            trfs[i] = AABB {
+                center: self.trees[i-19].pos,
                 size: Vec2 { x: 16.0, y: 16.0 },
             }.into();
-            uvs_tree[i] = SheetRegion::new(0, 809, 227, 3, 294, 294);
+            uvs[i] = SheetRegion::new(0, 1187, 463, 1, 294, 294);
         }
 
         let score_str = self.score.to_string();
@@ -282,19 +241,7 @@ impl engine::Game for Game {
         engine
             .renderer
             .sprites
-            .upload_sprites(&engine.renderer.gpu, 1, 0..1);
-        engine
-            .renderer
-            .sprites
-            .upload_sprites(&engine.renderer.gpu, 2, 0..2);
-        engine
-            .renderer
-            .sprites
-            .upload_sprites(&engine.renderer.gpu, 3, 0..16);
-        engine
-            .renderer
-            .sprites
-            .upload_sprites(&engine.renderer.gpu, 4, 0..16);
+            .upload_sprites(&engine.renderer.gpu, 1, 0..35);
         // engine
         //     .renderer
         //     .sprites
