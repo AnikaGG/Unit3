@@ -5,8 +5,8 @@ use engine::{geom::*, Camera, Engine, SheetRegion, Transform, Zeroable};
 use rand::Rng;
 const world_W: f32 = 320.0;
 const world_H: f32 = 240.0;
-const W: f32 = 75.0;
-const H: f32 = 50.0;
+const W: f32 = 37.75;
+const H: f32 = 18.75;
 const GUY_SPEED: f32 = 1.0;
 const SPRITE_MAX: usize = 16;
 const CATCH_DISTANCE: f32 = 16.0;
@@ -128,11 +128,28 @@ impl engine::Game for Game {
     }
     fn update(&mut self, engine: &mut Engine) {
         //TBD: can be put in char_actions
+        // keep guy in frame
         let xdir = engine.input.key_axis(engine::Key::Left, engine::Key::Right);
-        self.guy.pos.x += xdir * GUY_SPEED;
+        if self.guy.pos.x >= world_W-2.0 {
+            self.guy.pos.x = world_W - 2.5;
+        }
+        else if self.guy.pos.x <= 2.0 {
+            self.guy.pos.x = 2.5;
+        }
+        else {
+            self.guy.pos.x += xdir * GUY_SPEED;
+        }
         let ydir = engine.input.key_axis(engine::Key::Down, engine::Key::Up);
-        self.guy.pos.y += ydir * GUY_SPEED;
-        
+        if self.guy.pos.y >= world_H-2.0 {
+            self.guy.pos.y = world_H - 2.5;
+        }
+        else if self.guy.pos.y <= 2.0 {
+            self.guy.pos.y = 2.5;
+        }
+        else {
+            self.guy.pos.y += ydir * GUY_SPEED;
+        }
+
         // TODO: move bears
         let mut rng = rand::thread_rng();
         for (bear, i) in self.bears.iter_mut().zip(0..2) {
@@ -180,25 +197,25 @@ impl engine::Game for Game {
         // set guy
         trfs[0] = AABB {
             center: self.guy.pos,
-            size: Vec2 { x: 12.0, y: 16.5 },
+            size: Vec2 { x: 6.0, y: 8.25 },
         }
         .into();
-        uvs[0] = SheetRegion::new(0, 1363, 227, 4, 166, 232);
+        uvs[0] = SheetRegion::new(0, 1363, 227, 3, 166, 232);
 
         // set bears
         for i in 1..3 {
             trfs[i] = AABB {
                 center: self.bears[i-1].pos,
-                size: Vec2 { x: 32.0, y: 17.5 },
+                size: Vec2 { x: 16.0, y: 8.75 },
             }.into();
-            uvs[i] = SheetRegion::new(0, 973, 1, 3, 64, 33);
+            uvs[i] = SheetRegion::new(0, 973, 1, 2, 64, 33);
         }
 
         // set logs
         for i in 3..19 {
             trfs[i] = AABB {
                 center: self.logs[i-3].pos,
-                size: Vec2 { x: 9.0, y: 4.0 },
+                size: Vec2 { x: 4.5, y: 2.0 },
             }.into();
             uvs[i] = SheetRegion::new(0, 1171, 1, 2, 672, 224);
         }
@@ -207,9 +224,9 @@ impl engine::Game for Game {
         for i in 19..34 {
             trfs[i] = AABB {
                 center: self.trees[i-19].pos,
-                size: Vec2 { x: 16.0, y: 16.0 },
+                size: Vec2 { x: 11.0, y: 11.0 },
             }.into();
-            uvs[i] = SheetRegion::new(0, 1187, 463, 1, 294, 294);
+            uvs[i] = SheetRegion::new(0, 1187, 463, 4, 294, 294);
         }
 
         let score_str = self.score.to_string();
@@ -246,7 +263,25 @@ impl engine::Game for Game {
         //     .renderer
         //     .sprites
         //     .set_camera_all(&engine.renderer.gpu, self.camera);
-        self.camera.screen_pos = [self.guy.pos.x-(W/2.0), self.guy.pos.y-(H/2.0)];
+
+        
+        // if self.camera.screen_pos.x <= 0.0 {
+        //     self.camera.screen_pos.x = 1.0;
+        // }
+        // if self.camera.screen_pos.y <= 0.0 {
+        //     self.camera.screen_pos.y = 1.0;
+        // }
+        // self.camera.screen_pos = [self.guy.pos.x-(W/2.0), self.guy.pos.y-(H/2.0)];
+        self.camera.screen_pos = [
+        (self.guy.pos.x - (W / 2.0)).max(0.0).min(world_W - self.camera.screen_size[0]),
+        (self.guy.pos.y - (H / 2.0)).max(0.0).min(world_H - self.camera.screen_size[1]),
+        ];
+        // if self.camera.screen_pos[0]+W >= world_W {
+        //     self.camera.screen_pos[0] = self.camera.screen_pos[0]-W-1.0;
+        // }
+        // if self.camera.screen_pos[1] >= world_H {
+        //     self.camera.screen_pos[1] = world_H - 1.0;
+        // }
         engine
             .renderer
             .sprites
