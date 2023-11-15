@@ -9,10 +9,13 @@ const W: f32 = 37.75;
 const H: f32 = 18.75;
 const GUY_SPEED: f32 = 0.75;
 const SPRITE_MAX: usize = 16;
-const CATCH_DISTANCE: f32 = 16.0;
+const CATCH_DISTANCE: f32 = 4.0;
 const COLLISION_STEPS: usize = 3;
+const FIREPIT_POS: Vec2 = Vec2 {x: world_W/2.0 - 10.0, y: 24.0};
+
 struct Guy {
     pos: Vec2,
+    log_idx: usize, // this idx referes to logs[idx-1], so 0 means no log
 }
 
 struct Log {
@@ -94,6 +97,7 @@ impl engine::Game for Game {
                 x: world_W/2.0,
                 y: 24.0,
             },
+            log_idx: 0,
         };
 
         let mut rng = rand::thread_rng();
@@ -150,6 +154,12 @@ impl engine::Game for Game {
             self.guy.pos.y += ydir * GUY_SPEED;
         }
 
+        // move log with guy
+        if self.guy.log_idx > 0 {
+            self.logs[self.guy.log_idx-1].pos.x = self.guy.pos.x;
+            self.logs[self.guy.log_idx-1].pos.y = self.guy.pos.y - 2.0;
+        }
+
         // TODO: move bears
         let mut rng = rand::thread_rng();
         for (bear, i) in self.bears.iter_mut().zip(0..2) {
@@ -172,12 +182,36 @@ impl engine::Game for Game {
             }
         }
 
-        // TODO: check tree collision
-       
-        // TODO: Pick Up Log
-        
+        // check guy collision with log
+        if self.guy.log_idx == 0 {
+            if let Some(idx) = self
+            .logs
+            .iter()
+            .position(|log| log.pos.distance(self.guy.pos) <= CATCH_DISTANCE)
+            {
+                self.guy.log_idx = idx + 1;
+                print!("got log");
+            }
+        }
 
+        // check guy collision with firepit to release log
+        if self.guy.log_idx > 0 {
+            if FIREPIT_POS.distance(self.guy.pos) <= CATCH_DISTANCE {
+                self.guy.log_idx = 0;
+                print!("put in fire");
+            }
+        }
+
+        // check guy collision with firepit to release log
+        if self.guy.log_idx > 0 {
+            if FIREPIT_POS.distance(self.guy.pos) <= CATCH_DISTANCE {
+                self.guy.log_idx = 0;
+                print!("put in fire");
+            }
+        }
+        
     }
+
     fn render(&mut self, engine: &mut Engine) {
         // set bg image
         let (trfs_bg, uvs_bg) = engine.renderer.sprites.get_sprites_mut(0);
@@ -241,10 +275,7 @@ impl engine::Game for Game {
 
         // set firepit
         trfs[36] = AABB {
-            center: Vec2 {
-                x: world_W / 2.0 - 10.0 ,
-                y: 24.0,
-            },
+            center: FIREPIT_POS,
             size: Vec2 { x: 10.0, y: 10.0},
         }.into();
         uvs[36] = SheetRegion::new(0, 1, 759, 4, 322, 322);
