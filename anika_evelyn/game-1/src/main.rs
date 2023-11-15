@@ -7,7 +7,7 @@ const world_W: f32 = 320.0;
 const world_H: f32 = 240.0;
 const W: f32 = 37.75;
 const H: f32 = 18.75;
-const GUY_SPEED: f32 = 1.0;
+const GUY_SPEED: f32 = 0.75;
 const SPRITE_MAX: usize = 16;
 const CATCH_DISTANCE: f32 = 16.0;
 const COLLISION_STEPS: usize = 3;
@@ -54,7 +54,7 @@ impl engine::Game for Game {
         };
 
         #[cfg(not(target_arch = "wasm32"))]
-        // SPRITE GROUPS: 0: bg, 1: man (0), bears (1-2), logs (3-18), trees (19-34)
+        // SPRITE GROUPS: 0: bg, 1: man (0), bears (1-2), logs (3-18), trees (19-34), campsite (35)
 
         // add background group
         let background_img = image::open("content/background_grass.jpeg").unwrap().into_rgba8();
@@ -84,8 +84,8 @@ impl engine::Game for Game {
         engine.renderer.sprites.add_sprite_group(
             &engine.renderer.gpu,
             &sprite_tex,
-            vec![Transform::zeroed(); 35], // man (0), bears (1-2), logs (3-18), trees (19-34)
-            vec![SheetRegion::zeroed(); 35],
+            vec![Transform::zeroed(); 37], // man (0), bears (1-2), logs (3-18), trees (19-34), campsite (35), firepit (36)
+            vec![SheetRegion::zeroed(); 37],
             camera,
         );
 
@@ -215,7 +215,7 @@ impl engine::Game for Game {
         for i in 3..19 {
             trfs[i] = AABB {
                 center: self.logs[i-3].pos,
-                size: Vec2 { x: 4.5, y: 2.0 },
+                size: Vec2 { x: 6.0, y: 2.0 },
             }.into();
             uvs[i] = SheetRegion::new(0, 1171, 1, 2, 672, 224);
         }
@@ -228,6 +228,26 @@ impl engine::Game for Game {
             }.into();
             uvs[i] = SheetRegion::new(0, 1187, 463, 4, 294, 294);
         }
+
+        // set campsite
+        trfs[35] = AABB {
+            center: Vec2 {
+                x: world_W / 2.0 + 10.0,
+                y: 24.0,
+            },
+            size: Vec2 { x: 10.0, y: 13.6 },
+        }.into();
+        uvs[35] = SheetRegion::new(0, 769, 759, 4, 230, 314);
+
+        // set firepit
+        trfs[36] = AABB {
+            center: Vec2 {
+                x: world_W / 2.0 - 10.0 ,
+                y: 24.0,
+            },
+            size: Vec2 { x: 10.0, y: 10.0},
+        }.into();
+        uvs[36] = SheetRegion::new(0, 1, 759, 4, 322, 322);
 
         let score_str = self.score.to_string();
         let text_len = score_str.len();
@@ -258,7 +278,7 @@ impl engine::Game for Game {
         engine
             .renderer
             .sprites
-            .upload_sprites(&engine.renderer.gpu, 1, 0..35);
+            .upload_sprites(&engine.renderer.gpu, 1, 0..37);
         // engine
         //     .renderer
         //     .sprites
