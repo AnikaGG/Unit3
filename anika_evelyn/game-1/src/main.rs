@@ -26,13 +26,13 @@ struct Bear {
     pos: Vec2,
 }
 
-struct Tree {
-    pos: Vec2,
-}
+// struct Tree {
+//     pos: Vec2,
+// }
 
 struct Game {
     camera: engine::Camera,
-    trees: Vec<Tree>,
+    trees: Vec<AABB>,
     guy: Guy,
     bears: Vec<Bear>,
     logs: Vec<Log>,
@@ -101,9 +101,14 @@ impl engine::Game for Game {
         };
 
         let mut rng = rand::thread_rng();
-        let trees: Vec<Tree> = (0..16)
-        .map(|_| Tree {pos: Vec2 {x: rng.gen_range(0.0..world_W-1.0), y: rng.gen_range(0.0..world_H-1.0)}})
+        let trees: Vec<AABB> = (0..16)
+        .map(|_| AABB {
+            center: Vec2 { x: rng.gen_range(0.0..world_W-1.0), y: rng.gen_range(0.0..world_H-1.0) },
+            size: Vec2 { x: 11.0, y: 11.0 }})
         .collect();
+        // let trees: Vec<Tree> = (0..16)
+        // .map(|_| Tree {pos: Vec2 {x: rng.gen_range(0.0..world_W-1.0), y: rng.gen_range(0.0..world_H-1.0)}})
+        // .collect();
 
         let logs: Vec<Log> = (0..16)
         .map(|_| Log {pos: Vec2 {x: rng.gen_range(0.0..world_W-1.0), y: rng.gen_range(0.0..world_H-1.0)}})
@@ -131,8 +136,61 @@ impl engine::Game for Game {
         }
     }
     fn update(&mut self, engine: &mut Engine) {
+        // let mut contacts = Vec::with_capacity(self.trees.len());
+        // for _iter in 0..COLLISION_STEPS {
+        //     let guy_aabb = AABB {
+        //         center: self.guy.pos,
+        //         size: Vec2 { x: 16.0, y: 16.0 },
+        //     };
+        //     contacts.clear();
+        //     // TODO: to generalize to multiple guys, need to iterate over guys first and have guy_index, rect_index, displacement in a contact tuple
+        //     contacts.extend(
+        //         self.walls
+        //             .iter()
+        //             .enumerate()
+        //             .filter_map(|(ri, w)| w.displacement(guy_aabb).map(|d| (ri, d))),
+        //     );
+        //     if contacts.is_empty() {
+        //         break;
+        //     }
+        //     // This part stays mostly the same for multiple guys, except the shape of contacts is different
+        //     contacts.sort_by(|(_r1i, d1), (_r2i, d2)| {
+        //         d2.length_squared()
+        //             .partial_cmp(&d1.length_squared())
+        //             .unwrap()
+        //     });
+        //     for (wall_idx, _disp) in contacts.iter() {
+        //         // TODO: for multiple guys should access self.guys[guy_idx].
+        //         let guy_aabb = AABB {
+        //             center: self.guy.pos,
+        //             size: Vec2 { x: 16.0, y: 16.0 },
+        //         };
+        //         let wall = self.walls[*wall_idx];
+        //         let mut disp = wall.displacement(guy_aabb).unwrap_or(Vec2::ZERO);
+        //         // We got to a basically zero collision amount
+        //         if disp.x.abs() < std::f32::EPSILON || disp.y.abs() < std::f32::EPSILON {
+        //             break;
+        //         }
+        //         // Guy is left of wall, push left
+        //         if self.guy.pos.x < wall.center.x {
+        //             disp.x *= -1.0;
+        //         }
+        //         // Guy is below wall, push down
+        //         if self.guy.pos.y < wall.center.y {
+        //             disp.y *= -1.0;
+        //         }
+        //         if disp.x.abs() <= disp.y.abs() {
+        //             self.guy.pos.x += disp.x;
+        //             // so far it seems resolved; for multiple guys this should probably set a flag on the guy
+        //         } else if disp.y.abs() <= disp.x.abs() {
+        //             self.guy.pos.y += disp.y;
+        //             // so far it seems resolved; for multiple guys this should probably set a flag on the guy
+        //         }
+        //     }
+        // }
         //TBD: can be put in char_actions
         // keep guy in frame
+        // check for guy collision with tree
         let xdir = engine.input.key_axis(engine::Key::Left, engine::Key::Right);
         if self.guy.pos.x >= world_W-2.0 {
             self.guy.pos.x = world_W - 2.5;
@@ -189,19 +247,14 @@ impl engine::Game for Game {
             .iter()
             .position(|log| log.pos.distance(self.guy.pos) <= CATCH_DISTANCE)
             {
+                print!("{}", self.guy.log_idx);
                 self.guy.log_idx = idx + 1;
+                print!("{}", self.guy.log_idx);
                 print!("got log");
             }
         }
 
-        // check guy collision with firepit to release log
-        if self.guy.log_idx > 0 {
-            if FIREPIT_POS.distance(self.guy.pos) <= CATCH_DISTANCE {
-                self.guy.log_idx = 0;
-                print!("put in fire");
-            }
-        }
-
+        //TBD: press space to release log???
         // check guy collision with firepit to release log
         if self.guy.log_idx > 0 {
             if FIREPIT_POS.distance(self.guy.pos) <= CATCH_DISTANCE {
@@ -257,7 +310,7 @@ impl engine::Game for Game {
         // set trees
         for i in 19..34 {
             trfs[i] = AABB {
-                center: self.trees[i-19].pos,
+                center: self.trees[i-19].center,
                 size: Vec2 { x: 11.0, y: 11.0 },
             }.into();
             uvs[i] = SheetRegion::new(0, 1187, 463, 4, 294, 294);
@@ -314,25 +367,10 @@ impl engine::Game for Game {
         //     .renderer
         //     .sprites
         //     .set_camera_all(&engine.renderer.gpu, self.camera);
-
-        
-        // if self.camera.screen_pos.x <= 0.0 {
-        //     self.camera.screen_pos.x = 1.0;
-        // }
-        // if self.camera.screen_pos.y <= 0.0 {
-        //     self.camera.screen_pos.y = 1.0;
-        // }
-        // self.camera.screen_pos = [self.guy.pos.x-(W/2.0), self.guy.pos.y-(H/2.0)];
         self.camera.screen_pos = [
         (self.guy.pos.x - (W / 2.0)).max(0.0).min(world_W - self.camera.screen_size[0]),
         (self.guy.pos.y - (H / 2.0)).max(0.0).min(world_H - self.camera.screen_size[1]),
         ];
-        // if self.camera.screen_pos[0]+W >= world_W {
-        //     self.camera.screen_pos[0] = self.camera.screen_pos[0]-W-1.0;
-        // }
-        // if self.camera.screen_pos[1] >= world_H {
-        //     self.camera.screen_pos[1] = world_H - 1.0;
-        // }
         engine
             .renderer
             .sprites
