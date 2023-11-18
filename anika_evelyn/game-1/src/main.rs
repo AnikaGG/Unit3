@@ -10,7 +10,7 @@ const H: f32 = 18.75;
 const GUY_SPEED: f32 = 0.75;
 const SPRITE_MAX: usize = 16;
 const CATCH_DISTANCE: f32 = 4.0;
-const COLLISION_STEPS: usize = 3;
+const COLLISION_STEPS: usize = 2;
 const FIREPIT_POS: Vec2 = Vec2 {x: world_W/2.0 - 10.0, y: 24.0};
 
 struct Guy {
@@ -136,58 +136,61 @@ impl engine::Game for Game {
         }
     }
     fn update(&mut self, engine: &mut Engine) {
-        // let mut contacts = Vec::with_capacity(self.trees.len());
-        // for _iter in 0..COLLISION_STEPS {
-        //     let guy_aabb = AABB {
-        //         center: self.guy.pos,
-        //         size: Vec2 { x: 16.0, y: 16.0 },
-        //     };
-        //     contacts.clear();
-        //     // TODO: to generalize to multiple guys, need to iterate over guys first and have guy_index, rect_index, displacement in a contact tuple
-        //     contacts.extend(
-        //         self.walls
-        //             .iter()
-        //             .enumerate()
-        //             .filter_map(|(ri, w)| w.displacement(guy_aabb).map(|d| (ri, d))),
-        //     );
-        //     if contacts.is_empty() {
-        //         break;
-        //     }
-        //     // This part stays mostly the same for multiple guys, except the shape of contacts is different
-        //     contacts.sort_by(|(_r1i, d1), (_r2i, d2)| {
-        //         d2.length_squared()
-        //             .partial_cmp(&d1.length_squared())
-        //             .unwrap()
-        //     });
-        //     for (wall_idx, _disp) in contacts.iter() {
-        //         // TODO: for multiple guys should access self.guys[guy_idx].
-        //         let guy_aabb = AABB {
-        //             center: self.guy.pos,
-        //             size: Vec2 { x: 16.0, y: 16.0 },
-        //         };
-        //         let wall = self.walls[*wall_idx];
-        //         let mut disp = wall.displacement(guy_aabb).unwrap_or(Vec2::ZERO);
-        //         // We got to a basically zero collision amount
-        //         if disp.x.abs() < std::f32::EPSILON || disp.y.abs() < std::f32::EPSILON {
-        //             break;
-        //         }
-        //         // Guy is left of wall, push left
-        //         if self.guy.pos.x < wall.center.x {
-        //             disp.x *= -1.0;
-        //         }
-        //         // Guy is below wall, push down
-        //         if self.guy.pos.y < wall.center.y {
-        //             disp.y *= -1.0;
-        //         }
-        //         if disp.x.abs() <= disp.y.abs() {
-        //             self.guy.pos.x += disp.x;
-        //             // so far it seems resolved; for multiple guys this should probably set a flag on the guy
-        //         } else if disp.y.abs() <= disp.x.abs() {
-        //             self.guy.pos.y += disp.y;
-        //             // so far it seems resolved; for multiple guys this should probably set a flag on the guy
-        //         }
-        //     }
-        // }
+
+        let mut contacts = Vec::with_capacity(self.trees.len());
+        // TODO: for multiple guys this might be better as flags on the guy for what side he's currently colliding with stuff on
+        for _iter in 0..COLLISION_STEPS {
+            let guy_aabb = AABB {
+                center: self.guy.pos,
+                size: Vec2 { x: 16.0, y: 16.0 },
+            };
+            contacts.clear();
+            // TODO: to generalize to multiple guys, need to iterate over guys first and have guy_index, rect_index, displacement in a contact tuple
+            contacts.extend(
+                self.trees
+                    .iter()
+                    .enumerate()
+                    .filter_map(|(ri, w)| w.displacement(guy_aabb).map(|d| (ri, d))),
+            );
+            if contacts.is_empty() {
+                break;
+            }
+            // This part stays mostly the same for multiple guys, except the shape of contacts is different
+            contacts.sort_by(|(_r1i, d1), (_r2i, d2)| {
+                d2.length_squared()
+                    .partial_cmp(&d1.length_squared())
+                    .unwrap()
+            });
+            for (wall_idx, _disp) in contacts.iter() {
+                // TODO: for multiple guys should access self.guys[guy_idx].
+                let guy_aabb = AABB {
+                    center: self.guy.pos,
+                    size: Vec2 { x: 4.0, y: 4.0 },
+                };
+                let wall = self.trees[*wall_idx];
+                let mut disp = wall.displacement(guy_aabb).unwrap_or(Vec2::ZERO);
+                // We got to a basically zero collision amount
+                if disp.x.abs() < std::f32::EPSILON || disp.y.abs() < std::f32::EPSILON {
+                    break;
+                }
+                // Guy is left of wall, push left
+                if self.guy.pos.x < wall.center.x {
+                    disp.x *= -1.0;
+                }
+                // Guy is below wall, push down
+                if self.guy.pos.y < wall.center.y {
+                    disp.y *= -1.0;
+                }
+                if disp.x.abs() <= disp.y.abs() {
+                    self.guy.pos.x += disp.x;
+                    // so far it seems resolved; for multiple guys this should probably set a flag on the guy
+                } else if disp.y.abs() <= disp.x.abs() {
+                    self.guy.pos.y += disp.y;
+                    // so far it seems resolved; for multiple guys this should probably set a flag on the guy
+                }
+            }
+        }
+        
         //TBD: can be put in char_actions
         // keep guy in frame
         // check for guy collision with tree
