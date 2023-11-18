@@ -1,19 +1,18 @@
 pub struct Animation {
     // states are sprite sheet positions
-    pub(crate) states: Vec<[f32; 4]>,
+    pub states: Vec<[f32; 6]>,
     // frame counter is how many frames have passed on the current animation state
-    pub(crate) frame_counter: i32,
+    pub frame_counter: i32,
     // rate is how many frames need to pass to go to the next animation state
-    pub(crate) rate: i32,
+    pub rate: i32,
     // state_number is which frame of the animation we're on
-    pub(crate) state_number: usize,
+    pub state_number: usize,
 
-    pub(crate) is_facing_left: bool,
-    pub(crate) is_facing_front: bool,
-    pub(crate) sprite_width: f32,
+    pub is_facing_left: bool,
+    pub sprite_width: f32,
 
-    pub(crate) is_looping: bool,
-    pub(crate) is_done: bool,
+    pub is_looping: bool,
+    pub is_done: bool,
 }
 
 impl Animation {
@@ -50,7 +49,7 @@ impl Animation {
             self.tick();
         }
     }
-    pub fn get_current_state(&mut self) -> [f32; 4]{
+    pub fn get_current_state(&mut self) -> [f32; 6]{
 
         if !self.is_looping && self.state_number > self.states.len() - 1 {
             self.state_number = self.states.len() - 1;

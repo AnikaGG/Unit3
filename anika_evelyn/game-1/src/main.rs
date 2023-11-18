@@ -1,6 +1,7 @@
 // TODO: use AABB instead of Rect for centered box, so collision checking doesn't have to offset by half size
 
 use engine::wgpu;
+use engine::animation::Animation;
 use engine::{geom::*, Camera, Engine, SheetRegion, Transform, Zeroable};
 use rand::Rng;
 const world_W: f32 = 320.0;
@@ -25,6 +26,7 @@ struct Log {
 
 struct Bear {
     pos: Vec2,
+    bear_count: u32,
 }
 
 struct Game {
@@ -36,6 +38,7 @@ struct Game {
     apple_timer: u32,
     score: u32,
     font: engine::BitFont,
+    bear_anim: Animation,
 }
 
 impl engine::Game for Game {
@@ -110,8 +113,28 @@ impl engine::Game for Game {
         .collect();
 
         let bears: Vec<Bear> = (0..2)
-        .map(|_| Bear {pos: Vec2 {x: rng.gen_range(0.0..world_W), y: rng.gen_range(0.0..world_H)}})
+        .map(|_| Bear {pos: Vec2 {x: rng.gen_range(0.0..world_W), y: rng.gen_range(0.0..world_H)}, bear_count: 0})
         .collect();
+
+        // Create the bear animation
+        let mut bear_frames: Vec<[f32; 6]> = vec![
+            // bear 5 positions
+            [0.0, 973.0, 1.0, 2.0, 64.0, 33.0],
+            [0.0, 1039.0, 1.0, 2.0, 64.0, 33.0],
+            [0.0, 1105.0, 1.0, 2.0, 64.0, 33.0],
+            [0.0, 973.0, 36.0, 2.0, 64.0, 33.0],
+            [0.0, 1039.0, 36.0, 2.0, 64.0, 33.0],
+        ];
+        let mut bear_anim = Animation {
+            states: bear_frames,
+            frame_counter: 0,
+            rate: 50,
+            state_number: 0,
+            is_facing_left: false,
+            sprite_width: 64.0,
+            is_looping: true,
+            is_done: false,
+        };
         
 
         let font = engine::BitFont::with_sheet_region(
@@ -128,6 +151,7 @@ impl engine::Game for Game {
             apple_timer: 0,
             score: 0,
             font,
+            bear_anim,
         }
     }
     fn update(&mut self, engine: &mut Engine) {
@@ -234,10 +258,16 @@ impl engine::Game for Game {
         // TODO: move bears
         let mut rng = rand::thread_rng();
         for (bear, i) in self.bears.iter_mut().zip(0..2) {
-            let xdir = if rng.gen_range(0..2) > 0 {1.0} else {-1.0};
-            let ydir = if rng.gen_range(0..2) > 0 {1.0} else {-1.0};
-            bear.pos.x += xdir * 2.0;
-            bear.pos.y += ydir * 2.0;
+            if bear.bear_count == 3 {
+                let xdir = if rng.gen_range(0..2) > 0 {1.0} else {-1.0};
+                let ydir = if rng.gen_range(0..2) > 0 {1.0} else {-1.0};
+                bear.pos.x += xdir * 1.0;
+                bear.pos.y += ydir * 1.0;
+                let _ = bear.bear_count ==0;
+            }
+            else {
+                bear.bear_count+=1;
+            }
             // keep bear in frame
             if bear.pos.x >= world_W {
                 bear.pos.x = world_W - 1.0;
@@ -251,6 +281,9 @@ impl engine::Game for Game {
             if bear.pos.y <= 0.0 {
                 bear.pos.y = 1.0;
             }
+
+            // Set bear animation frames
+            let current_state = self.bear_anim.get_current_state();
         }
 
         // check guy collision with log
@@ -317,15 +350,29 @@ impl engine::Game for Game {
         else {
             uvs[0] = right_sheet;
         }
-        // uvs[0] = SheetRegion::new(0, 1363, 227, 3, 166, 232);
 
         // set bears
         for i in 1..3 {
+            // Get the current state from the animation for each bear
+            let current_state = self.bear_anim.get_current_state();
+
+            // Use the current state for setting AABB and SheetRegion
             trfs[i] = AABB {
-                center: self.bears[i-1].pos,
+                center: self.bears[i - 1].pos,
                 size: Vec2 { x: 16.0, y: 8.75 },
-            }.into();
-            uvs[i] = SheetRegion::new(0, 973, 1, 2, 64, 33);
+            }
+            .into();
+            uvs[i] = SheetRegion::new(
+                current_state[0] as u16,
+                current_state[1] as u16,
+                current_state[2] as u16,
+                current_state[3] as u16,
+                current_state[4] as u16,
+                current_state[5] as u16,
+            );
+
+            // Tick the animation for the next frame
+            self.bear_anim.tick();
         }
 
         // set logs
