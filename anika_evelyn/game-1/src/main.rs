@@ -2,6 +2,7 @@
 
 use engine::wgpu;
 use engine::animation::Animation;
+use engine::gamestate::GameState;
 use engine::{geom::*, Camera, Engine, SheetRegion, Transform, Zeroable};
 use rand::Rng;
 const world_W: f32 = 320.0;
@@ -39,6 +40,7 @@ struct Game {
     score: u32,
     font: engine::BitFont,
     bear_anim: Animation,
+    state: GameState,
 }
 
 impl engine::Game for Game {
@@ -58,6 +60,7 @@ impl engine::Game for Game {
 
         #[cfg(not(target_arch = "wasm32"))]
         // SPRITE GROUPS: 0: bg, 1: man (0), bears (1-2), logs (3-18), trees (19-34), campsite (35)
+        // 2: bgTitle, 3: bgBearAttack
 
         // add background group
         let background_img = image::open("content/background_grass.jpeg").unwrap().into_rgba8();
@@ -92,6 +95,38 @@ impl engine::Game for Game {
             camera,
         );
 
+        // add Title group
+        let background_title_img = image::open("content/bgTitle.png").unwrap().into_rgba8();
+        let background_title_tex = engine.renderer.gpu.create_texture(
+            &background_title_img,
+            wgpu::TextureFormat::Rgba8UnormSrgb,
+            background_title_img.dimensions(),
+            Some("background-demo.png"),
+        );
+        engine.renderer.sprites.add_sprite_group(
+            &engine.renderer.gpu,
+            &background_title_tex,
+            vec![Transform::zeroed(); 1],
+            vec![SheetRegion::zeroed(); 1],
+            camera,
+        );
+
+        // add End Game Bear Attack group
+        let background_bear_attack_img = image::open("content/bgBearAttack.png").unwrap().into_rgba8();
+        let background_bear_attack_tex = engine.renderer.gpu.create_texture(
+            &background_bear_attack_img,
+            wgpu::TextureFormat::Rgba8UnormSrgb,
+            background_bear_attack_img.dimensions(),
+            Some("background-demo.png"),
+        );
+        engine.renderer.sprites.add_sprite_group(
+            &engine.renderer.gpu,
+            &background_bear_attack_tex,
+            vec![Transform::zeroed(); 1],
+            vec![SheetRegion::zeroed(); 1],
+            camera,
+        );
+
         let guy = Guy {
             pos: Vec2 {
                 x: world_W/2.0,
@@ -115,6 +150,11 @@ impl engine::Game for Game {
         let bears: Vec<Bear> = (0..2)
         .map(|_| Bear {pos: Vec2 {x: rng.gen_range(0.0..world_W), y: rng.gen_range(0.0..world_H)}, bear_count: 0})
         .collect();
+
+        // print bears coords on one line
+        for bear in bears.iter() {
+            println!("bear: {} {} ", bear.pos.x, bear.pos.y);
+        }
 
         // Create the bear animation
         let mut bear_frames: Vec<[f32; 6]> = vec![
@@ -152,9 +192,21 @@ impl engine::Game for Game {
             score: 0,
             font,
             bear_anim,
+            state: GameState::Title,
         }
     }
     fn update(&mut self, engine: &mut Engine) {
+
+        if self.state == GameState::Title{
+            if engine.input.is_key_down(winit::event::VirtualKeyCode::Space) {
+                self.state = GameState::Play;
+            }
+            return;
+        }
+
+        else if self.state == GameState::BearAttacked{
+            return;
+        }
 
         let mut contacts = Vec::with_capacity(self.trees.len());
         // TODO: for multiple guys this might be better as flags on the guy for what side he's currently colliding with stuff on
@@ -308,10 +360,93 @@ impl engine::Game for Game {
                 print!("put in fire");
             }
         }
+
+        // check guy collision with bear
+        if self.bears.iter().any(|bear| bear.pos.distance(self.guy.pos) <= CATCH_DISTANCE) {
+            self.state = GameState::BearAttacked;
+        }
         
     }
 
     fn render(&mut self, engine: &mut Engine) {
+
+        if self.state == GameState::Title{
+            // set bg image
+            let (trfs_bg, uvs_bg) = engine.renderer.sprites.get_sprites_mut(2);
+            trfs_bg[0] = AABB {
+                center: Vec2 {
+                    x: W / 2.0,
+                    y: H / 2.0,
+                },
+                size: Vec2 { x: W, y: H },
+            }
+            .into();
+            uvs_bg[0] = SheetRegion::new(0, 0, 0, 1, 533, 400);
+
+            engine
+            .renderer
+            .sprites
+            .upload_sprites(&engine.renderer.gpu, 2, 0..1);
+
+            engine
+            .renderer
+            .sprites
+            .set_camera(&engine.renderer.gpu, 2, self.camera);
+            return;
+        }
+
+        else if self.state == GameState::BearAttacked{
+            // set bg image
+            let (trfs_bg, uvs_bg) = engine.renderer.sprites.get_sprites_mut(3);
+            trfs_bg[0] = AABB {
+                center: Vec2 {
+                    x: self.camera.screen_pos[0] + W / 2.0,
+                    y: self.camera.screen_pos[1] + H / 2.0,
+                },
+                size: Vec2 { x: W, y: H },
+            }
+            .into();
+            uvs_bg[0] = SheetRegion::new(0, 0, 0, 1, 533, 400);
+
+            // remove bg
+            let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(0);
+            trfs[0] = Transform::zeroed();
+            uvs[0] = SheetRegion::zeroed();
+
+            // remove all other sprites
+            let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(1);
+            for i in 0..37 {
+                trfs[i] = Transform::zeroed();
+                uvs[i] = SheetRegion::zeroed();
+            }
+
+            engine
+            .renderer
+            .sprites
+            .upload_sprites(&engine.renderer.gpu, 3, 0..1);
+
+            engine
+            .renderer
+            .sprites
+            .upload_sprites(&engine.renderer.gpu, 0, 0..1);
+
+            engine
+            .renderer
+            .sprites
+            .upload_sprites(&engine.renderer.gpu, 1, 0..37);
+
+            engine
+            .renderer
+            .sprites
+            .set_camera_all(&engine.renderer.gpu, self.camera);
+            return;
+        }
+
+        // remove title bg
+        let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(2);
+        trfs[0] = Transform::zeroed();
+        uvs[0] = SheetRegion::zeroed();
+
         // set bg image
         let (trfs_bg, uvs_bg) = engine.renderer.sprites.get_sprites_mut(0);
         trfs_bg[0] = AABB {
@@ -440,6 +575,10 @@ impl engine::Game for Game {
             .renderer
             .sprites
             .upload_sprites(&engine.renderer.gpu, 1, 0..37);
+        engine
+            .renderer
+            .sprites
+            .upload_sprites(&engine.renderer.gpu, 2, 0..1);
         // engine
         //     .renderer
         //     .sprites
