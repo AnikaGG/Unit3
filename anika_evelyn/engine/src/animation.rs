@@ -9,6 +9,7 @@ pub struct Animation {
     pub(crate) state_number: usize,
 
     pub(crate) is_facing_left: bool,
+    pub(crate) is_facing_front: bool,
     pub(crate) sprite_width: f32,
 
     pub(crate) is_looping: bool,

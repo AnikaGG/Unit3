@@ -16,6 +16,7 @@ const FIREPIT_POS: Vec2 = Vec2 {x: world_W/2.0 - 10.0, y: 24.0};
 struct Guy {
     pos: Vec2,
     log_idx: usize, // this idx referes to logs[idx-1], so 0 means no log
+    direction: usize, // 0: front, 1: back, 2: left, 3: right
 }
 
 struct Log {
@@ -25,10 +26,6 @@ struct Log {
 struct Bear {
     pos: Vec2,
 }
-
-// struct Tree {
-//     pos: Vec2,
-// }
 
 struct Game {
     camera: engine::Camera,
@@ -98,6 +95,7 @@ impl engine::Game for Game {
                 y: 24.0,
             },
             log_idx: 0,
+            direction: 0,
         };
 
         let mut rng = rand::thread_rng();
@@ -106,9 +104,6 @@ impl engine::Game for Game {
             center: Vec2 { x: rng.gen_range(0.0..world_W-1.0), y: rng.gen_range(0.0..world_H-1.0) },
             size: Vec2 { x: 11.0, y: 11.0 }})
         .collect();
-        // let trees: Vec<Tree> = (0..16)
-        // .map(|_| Tree {pos: Vec2 {x: rng.gen_range(0.0..world_W-1.0), y: rng.gen_range(0.0..world_H-1.0)}})
-        // .collect();
 
         let logs: Vec<Log> = (0..16)
         .map(|_| Log {pos: Vec2 {x: rng.gen_range(0.0..world_W-1.0), y: rng.gen_range(0.0..world_H-1.0)}})
@@ -215,6 +210,21 @@ impl engine::Game for Game {
             self.guy.pos.y += ydir * GUY_SPEED;
         }
 
+        // 0: front, 1: back, 2: left, 3: right
+        // update direction
+        if engine.input.is_key_down(winit::event::VirtualKeyCode::Down) {
+            self.guy.direction = 0;
+        }
+        else if engine.input.is_key_down(winit::event::VirtualKeyCode::Up) {
+            self.guy.direction = 1;
+        }
+        else if engine.input.is_key_down(winit::event::VirtualKeyCode::Left) {
+            self.guy.direction = 2;
+        }
+        else if engine.input.is_key_down(winit::event::VirtualKeyCode::Right) {
+            self.guy.direction = 3;
+        }
+
         // move log with guy
         if self.guy.log_idx > 0 {
             self.logs[self.guy.log_idx-1].pos.x = self.guy.pos.x;
@@ -284,13 +294,30 @@ impl engine::Game for Game {
         // set sprites
         let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(1);
 
+        // 0: front, 1: back, 2: left, 3: right
+        let front_sheet = SheetRegion::new(0, 1363, 227, 3, 166, 232);
+        let back_sheet = SheetRegion::new(0, 1187, 227, 3, 174, 228);
+        let left_sheet = SheetRegion::new(0, 1531, 227, 3, 156, 238);
+        let right_sheet = SheetRegion::new(0, 1689, 227, 3, 154, 234);
         // set guy
         trfs[0] = AABB {
             center: self.guy.pos,
             size: Vec2 { x: 6.0, y: 8.25 },
         }
         .into();
-        uvs[0] = SheetRegion::new(0, 1363, 227, 3, 166, 232);
+        if self.guy.direction == 0 {
+            uvs[0] = front_sheet;
+        }
+        else if self.guy.direction == 1 {
+            uvs[0] = back_sheet;
+        }
+        else if self.guy.direction == 2 {
+            uvs[0] = left_sheet;
+        }
+        else {
+            uvs[0] = right_sheet;
+        }
+        // uvs[0] = SheetRegion::new(0, 1363, 227, 3, 166, 232);
 
         // set bears
         for i in 1..3 {
