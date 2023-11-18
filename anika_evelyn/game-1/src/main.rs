@@ -9,7 +9,7 @@ const W: f32 = 37.75;
 const H: f32 = 18.75;
 const GUY_SPEED: f32 = 0.75;
 const SPRITE_MAX: usize = 16;
-const CATCH_DISTANCE: f32 = 4.0;
+const CATCH_DISTANCE: f32 = 3.0;
 const COLLISION_STEPS: usize = 2;
 const FIREPIT_POS: Vec2 = Vec2 {x: world_W/2.0 - 10.0, y: 24.0};
 
@@ -190,7 +190,7 @@ impl engine::Game for Game {
                 }
             }
         }
-        
+
         //TBD: can be put in char_actions
         // keep guy in frame
         // check for guy collision with tree
