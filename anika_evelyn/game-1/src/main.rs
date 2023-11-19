@@ -23,6 +23,7 @@ struct Guy {
 
 struct Log {
     pos: Vec2,
+    collected: bool,
 }
 
 struct Bear {
@@ -37,7 +38,7 @@ struct Game {
     bears: Vec<Bear>,
     logs: Vec<Log>,
     apple_timer: u32,
-    score: u32,
+    logs_collected: u32,
     font: engine::BitFont,
     bear_anim: Animation,
     state: GameState,
@@ -144,7 +145,7 @@ impl engine::Game for Game {
         .collect();
 
         let logs: Vec<Log> = (0..16)
-        .map(|_| Log {pos: Vec2 {x: rng.gen_range(0.0..world_W-1.0), y: rng.gen_range(0.0..world_H-1.0)}})
+        .map(|_| Log {pos: Vec2 {x: rng.gen_range(0.0..world_W-1.0), y: rng.gen_range(0.0..world_H-1.0)}, collected: false})
         .collect();
 
         let bears: Vec<Bear> = (0..2)
@@ -189,7 +190,7 @@ impl engine::Game for Game {
             logs: logs,
             bears: bears,
             apple_timer: 0,
-            score: 0,
+            logs_collected: 0,
             font,
             bear_anim,
             state: GameState::Title,
@@ -345,10 +346,11 @@ impl engine::Game for Game {
             .iter()
             .position(|log| log.pos.distance(self.guy.pos) <= CATCH_DISTANCE)
             {
-                print!("{}", self.guy.log_idx);
-                self.guy.log_idx = idx + 1;
-                print!("{}", self.guy.log_idx);
-                print!("got log");
+                if !self.logs[idx].collected {
+                    self.logs[idx].collected = true;
+                    self.guy.log_idx = idx + 1;
+                    println!("got log");
+                }
             }
         }
 
@@ -356,8 +358,10 @@ impl engine::Game for Game {
         // check guy collision with firepit to release log
         if self.guy.log_idx > 0 {
             if FIREPIT_POS.distance(self.guy.pos) <= CATCH_DISTANCE {
+                self.logs[self.guy.log_idx-1].collected = true;
                 self.guy.log_idx = 0;
-                print!("put in fire");
+                self.logs_collected = self.logs_collected + 1;
+                println!("{} log in fire", self.logs_collected);
             }
         }
 
@@ -545,8 +549,8 @@ impl engine::Game for Game {
         }.into();
         uvs[36] = SheetRegion::new(0, 1, 759, 4, 322, 322);
 
-        let score_str = self.score.to_string();
-        let text_len = score_str.len();
+        // let score_str = self.score.to_string();
+        // let text_len = score_str.len();
 
         // engine.renderer.sprites.resize_sprite_group(
         //     &engine.renderer.gpu,
