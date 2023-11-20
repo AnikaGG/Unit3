@@ -42,6 +42,7 @@ struct Game {
     font: engine::BitFont,
     bear_anim: Animation,
     state: GameState,
+    has_fire: bool,
 }
 
 impl engine::Game for Game {
@@ -91,8 +92,8 @@ impl engine::Game for Game {
         engine.renderer.sprites.add_sprite_group(
             &engine.renderer.gpu,
             &sprite_tex,
-            vec![Transform::zeroed(); 37], // man (0), bears (1-2), logs (3-18), trees (19-34), campsite (35), firepit (36)
-            vec![SheetRegion::zeroed(); 37],
+            vec![Transform::zeroed(); 38], // man (0), bears (1-2), logs (3-18), trees (19-34), campsite (35), firepit (36), fire (37)
+            vec![SheetRegion::zeroed(); 38],
             camera,
         );
 
@@ -194,6 +195,7 @@ impl engine::Game for Game {
             font,
             bear_anim,
             state: GameState::Title,
+            has_fire: false,
         }
     }
     fn update(&mut self, engine: &mut Engine) {
@@ -362,6 +364,11 @@ impl engine::Game for Game {
                 self.guy.log_idx = 0;
                 self.logs_collected = self.logs_collected + 1;
                 println!("{} log in fire", self.logs_collected);
+
+                if self.logs_collected == 3 && !self.has_fire {
+                    self.has_fire = true;
+                    println!("fire!");
+                }
             }
         }
 
@@ -419,7 +426,7 @@ impl engine::Game for Game {
 
             // remove all other sprites
             let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(1);
-            for i in 0..37 {
+            for i in 0..38 {
                 trfs[i] = Transform::zeroed();
                 uvs[i] = SheetRegion::zeroed();
             }
@@ -437,7 +444,7 @@ impl engine::Game for Game {
             engine
             .renderer
             .sprites
-            .upload_sprites(&engine.renderer.gpu, 1, 0..37);
+            .upload_sprites(&engine.renderer.gpu, 1, 0..38);
 
             engine
             .renderer
@@ -549,6 +556,17 @@ impl engine::Game for Game {
         }.into();
         uvs[36] = SheetRegion::new(0, 1, 759, 4, 322, 322);
 
+        // add fire
+        let fire_size = if self.has_fire { Vec2 { x: 6.0, y: 6.1 } } else { Vec2 { x: 0.0, y: 0.0 } };
+        trfs[37] = AABB {
+            center: Vec2 {
+                x: FIREPIT_POS.x,
+                y: FIREPIT_POS.y,
+            },
+            size:  fire_size
+        }.into();
+        uvs[37] = SheetRegion::new(0, 811, 141, 1, 286, 292);
+
         // let score_str = self.score.to_string();
         // let text_len = score_str.len();
 
@@ -578,7 +596,7 @@ impl engine::Game for Game {
         engine
             .renderer
             .sprites
-            .upload_sprites(&engine.renderer.gpu, 1, 0..37);
+            .upload_sprites(&engine.renderer.gpu, 1, 0..38);
         engine
             .renderer
             .sprites
