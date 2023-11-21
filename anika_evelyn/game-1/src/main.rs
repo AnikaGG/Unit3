@@ -92,8 +92,8 @@ impl engine::Game for Game {
         engine.renderer.sprites.add_sprite_group(
             &engine.renderer.gpu,
             &sprite_tex,
-            vec![Transform::zeroed(); 38], // man (0), bears (1-2), logs (3-18), trees (19-34), campsite (35), firepit (36), fire (37)
-            vec![SheetRegion::zeroed(); 38],
+            vec![Transform::zeroed(); 40], 
+            vec![SheetRegion::zeroed(); 40], // man (0), bears (1-4), logs (5-20), trees (21-36), campsite (37), firepit (38), fire (39)
             camera,
         );
 
@@ -165,7 +165,7 @@ impl engine::Game for Game {
         .map(|_| Log {pos: Vec2 {x: rng.gen_range(0.0..world_W-1.0), y: rng.gen_range(0.0..world_H-1.0)}, collected: false})
         .collect();
 
-        let bears: Vec<Bear> = (0..2)
+        let bears: Vec<Bear> = (0..4)
         .map(|_| Bear {pos: Vec2 {x: rng.gen_range(0.0..world_W), y: rng.gen_range(0.0..world_H)}, bear_count: 0})
         .collect();
 
@@ -484,7 +484,7 @@ impl engine::Game for Game {
 
             // remove all other sprites
             let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(1);
-            for i in 0..38 {
+            for i in 0..40 {
                 trfs[i] = Transform::zeroed();
                 uvs[i] = SheetRegion::zeroed();
             }
@@ -502,7 +502,7 @@ impl engine::Game for Game {
             engine
             .renderer
             .sprites
-            .upload_sprites(&engine.renderer.gpu, 1, 0..38);
+            .upload_sprites(&engine.renderer.gpu, 1, 0..40);
 
             engine
             .renderer
@@ -554,9 +554,11 @@ impl engine::Game for Game {
         else {
             uvs[0] = right_sheet;
         }
+        
+        // SPRITE INDICES: man (0), bears (1-4), logs (5-20), trees (21-36), campsite (37), firepit (38), fire (39)
 
         // set bears
-        for i in 1..3 {
+        for i in 1..5 {
             // Get the current state from the animation for each bear
             let current_state = self.bear_anim.get_current_state();
 
@@ -580,50 +582,50 @@ impl engine::Game for Game {
         }
 
         // set logs
-        for i in 3..19 {
+        for i in 5..21 {
             trfs[i] = AABB {
-                center: self.logs[i-3].pos,
+                center: self.logs[i-5].pos,
                 size: Vec2 { x: 6.0, y: 2.0 },
             }.into();
             uvs[i] = SheetRegion::new(0, 1171, 1, 2, 672, 224);
         }
 
         // set trees
-        for i in 19..34 {
+        for i in 21..36 {
             trfs[i] = AABB {
-                center: self.trees[i-19].center,
+                center: self.trees[i-21].center,
                 size: Vec2 { x: 11.0, y: 11.0 },
             }.into();
             uvs[i] = SheetRegion::new(0, 1187, 463, 4, 294, 294);
         }
 
         // set campsite
-        trfs[35] = AABB {
+        trfs[37] = AABB {
             center: Vec2 {
                 x: world_W / 2.0 + 10.0,
                 y: 24.0,
             },
             size: Vec2 { x: 10.0, y: 13.6 },
         }.into();
-        uvs[35] = SheetRegion::new(0, 769, 759, 4, 230, 314);
+        uvs[37] = SheetRegion::new(0, 769, 759, 4, 230, 314);
 
         // set firepit
-        trfs[36] = AABB {
+        trfs[38] = AABB {
             center: FIREPIT_POS,
             size: Vec2 { x: 10.0, y: 10.0},
         }.into();
-        uvs[36] = SheetRegion::new(0, 1, 759, 4, 322, 322);
+        uvs[38] = SheetRegion::new(0, 1, 759, 4, 322, 322);
 
         // add fire
         let fire_size = if self.has_fire { Vec2 { x: 6.0, y: 6.1 } } else { Vec2 { x: 0.0, y: 0.0 } };
-        trfs[37] = AABB {
+        trfs[39] = AABB {
             center: Vec2 {
                 x: FIREPIT_POS.x,
                 y: FIREPIT_POS.y,
             },
             size:  fire_size
         }.into();
-        uvs[37] = SheetRegion::new(0, 811, 141, 1, 286, 292);
+        uvs[39] = SheetRegion::new(0, 811, 141, 1, 286, 292);
 
         // let score_str = self.score.to_string();
         // let text_len = score_str.len();
@@ -654,7 +656,7 @@ impl engine::Game for Game {
         engine
             .renderer
             .sprites
-            .upload_sprites(&engine.renderer.gpu, 1, 0..38);
+            .upload_sprites(&engine.renderer.gpu, 1, 0..40);
         engine
             .renderer
             .sprites
