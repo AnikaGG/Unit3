@@ -61,8 +61,8 @@ impl engine::Game for Game {
         };
 
         #[cfg(not(target_arch = "wasm32"))]
-        // SPRITE GROUPS: 0: bg, 1: man (0), bears (1-2), logs (3-18), trees (19-34), campsite (35)
-        // 2: bgTitle, 3: bgBearAttack
+        // SPRITE GROUPS: 0: bg, 1: sprites
+        // 2: bgTitle, 3: bgBearAttack, 4: bgInstructions
 
         // add background group
         let background_img = image::open("content/background_grass.jpeg").unwrap().into_rgba8();
@@ -124,6 +124,22 @@ impl engine::Game for Game {
         engine.renderer.sprites.add_sprite_group(
             &engine.renderer.gpu,
             &background_bear_attack_tex,
+            vec![Transform::zeroed(); 1],
+            vec![SheetRegion::zeroed(); 1],
+            camera,
+        );
+
+        // add Instructions group
+        let background_instructions_img = image::open("content/campingInstructions.png").unwrap().into_rgba8();
+        let background_instructions_tex = engine.renderer.gpu.create_texture(
+            &background_instructions_img,
+            wgpu::TextureFormat::Rgba8UnormSrgb,
+            background_instructions_img.dimensions(),
+            Some("background-demo.png"),
+        );
+        engine.renderer.sprites.add_sprite_group(
+            &engine.renderer.gpu,
+            &background_instructions_tex,
             vec![Transform::zeroed(); 1],
             vec![SheetRegion::zeroed(); 1],
             camera,
@@ -201,7 +217,14 @@ impl engine::Game for Game {
     fn update(&mut self, engine: &mut Engine) {
 
         if self.state == GameState::Title{
-            if engine.input.is_key_down(winit::event::VirtualKeyCode::Space) {
+            if engine.input.is_key_pressed(winit::event::VirtualKeyCode::Space) {
+                self.state = GameState::Instructions;
+            }
+            return;
+        }
+
+        else if self.state == GameState::Instructions{
+            if engine.input.is_key_pressed(winit::event::VirtualKeyCode::Space) {
                 self.state = GameState::Play;
             }
             return;
@@ -406,6 +429,41 @@ impl engine::Game for Game {
             return;
         }
 
+        else if self.state == GameState::Instructions {
+            // remove title bg
+            let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(2);
+            trfs[0] = Transform::zeroed();
+            uvs[0] = SheetRegion::zeroed();
+
+            // set bg image
+            let (trfs_bg, uvs_bg) = engine.renderer.sprites.get_sprites_mut(4);
+            trfs_bg[0] = AABB {
+                center: Vec2 {
+                    x: W / 2.0,
+                    y: H / 2.0,
+                },
+                size: Vec2 { x: W, y: H },
+            }
+            .into();
+            uvs_bg[0] = SheetRegion::new(0, 0, 0, 1, 533, 400);
+
+            engine
+            .renderer
+            .sprites
+            .upload_sprites(&engine.renderer.gpu, 2, 0..1);
+
+            engine
+            .renderer
+            .sprites
+            .upload_sprites(&engine.renderer.gpu, 4, 0..1);
+
+            engine
+            .renderer
+            .sprites
+            .set_camera(&engine.renderer.gpu, 4, self.camera);
+            return;
+        }
+
         else if self.state == GameState::BearAttacked{
             // set bg image
             let (trfs_bg, uvs_bg) = engine.renderer.sprites.get_sprites_mut(3);
@@ -453,8 +511,8 @@ impl engine::Game for Game {
             return;
         }
 
-        // remove title bg
-        let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(2);
+        // remove instructions bg
+        let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(4);
         trfs[0] = Transform::zeroed();
         uvs[0] = SheetRegion::zeroed();
 
