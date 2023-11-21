@@ -12,6 +12,7 @@ const H: f32 = 18.75;
 const GUY_SPEED: f32 = 0.75;
 const SPRITE_MAX: usize = 16;
 const CATCH_DISTANCE: f32 = 3.0;
+const BEAR_DISTANCE: f32 = 4.0;
 const COLLISION_STEPS: usize = 2;
 const FIREPIT_POS: Vec2 = Vec2 {x: world_W/2.0 - 10.0, y: 24.0};
 
@@ -396,7 +397,7 @@ impl engine::Game for Game {
         }
 
         // check guy collision with bear
-        if self.bears.iter().any(|bear| bear.pos.distance(self.guy.pos) <= CATCH_DISTANCE) {
+        if self.bears.iter().any(|bear| bear.pos.distance(self.guy.pos) <= BEAR_DISTANCE) {
             self.state = GameState::BearAttacked;
         }
         
