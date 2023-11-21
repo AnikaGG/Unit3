@@ -658,7 +658,7 @@ impl engine::Game for Game {
         engine
             .renderer
             .sprites
-            .upload_sprites(&engine.renderer.gpu, 2, 0..1);
+            .upload_sprites(&engine.renderer.gpu, 4, 0..1);
         // engine
         //     .renderer
         //     .sprites
