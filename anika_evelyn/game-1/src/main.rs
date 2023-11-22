@@ -11,7 +11,6 @@ const world_H: f32 = 240.0;
 const W: f32 = 40.39;
 const H: f32 = 20.06;
 const GUY_SPEED: f32 = 0.75;
-const SPRITE_MAX: usize = 16;
 const CATCH_DISTANCE: f32 = 3.0;
 const BEAR_DISTANCE: f32 = 4.0;
 const COLLISION_STEPS: usize = 2;
@@ -58,6 +57,17 @@ struct Game {
     friction_count: u32,
     fire_timer: Option<Instant>,
 }
+
+// function creates a new random position for a log that doesnt conflict with trees
+fn new_log_pos(trees: &Vec<AABB>) -> Vec2 {
+    let mut rng = rand::thread_rng();
+    let mut new_pos = Vec2 {x: rng.gen_range(0.0..world_W-1.0), y: rng.gen_range(0.0..world_H-1.0)};
+    while trees.iter().any(|tree| tree.center.distance(new_pos) <= 2.0) {
+        new_pos = Vec2 {x: rng.gen_range(0.0..world_W-1.0), y: rng.gen_range(0.0..world_H-1.0)};
+    }
+    return new_pos;
+}
+
 
 impl engine::Game for Game {
     fn new(engine: &mut Engine) -> Self {
@@ -208,7 +218,7 @@ impl engine::Game for Game {
         .collect();
 
         let logs: Vec<Log> = (0..16)
-        .map(|_| Log {pos: Vec2 {x: rng.gen_range(0.0..world_W-1.0), y: rng.gen_range(0.0..world_H-1.0)}, collected: false})
+        .map(|_| Log {pos: new_log_pos(&trees), collected: false})
         .collect();
 
         let bears: Vec<Bear> = (0..4)
@@ -490,7 +500,12 @@ impl engine::Game for Game {
         if self.guy.log_idx > 0 {
             if FIREPIT_POS.distance(self.guy.pos) <= CATCH_DISTANCE+2.0 {
                 if engine.input.is_key_pressed(winit::event::VirtualKeyCode::Return) {
-                    self.logs[self.guy.log_idx-1].collected = true;
+                    // recycle log if fire exists, else put log in pit
+                    if self.has_fire {
+                        self.logs[self.guy.log_idx-1].pos = new_log_pos(&self.trees);
+                    } else {
+                        self.logs[self.guy.log_idx-1].collected = true;
+                    }
                     self.guy.log_idx = 0;
                     self.logs_collected = self.logs_collected + 1;
                     println!("{} log in fire", self.logs_collected);
