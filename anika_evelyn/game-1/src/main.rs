@@ -63,7 +63,7 @@ impl engine::Game for Game {
 
         #[cfg(not(target_arch = "wasm32"))]
         // SPRITE GROUPS: 0: bg, 1: sprites
-        // 2: bgTitle, 3: bgBearAttack, 4: bgInstructions
+        // 2: bgTitle, 3: bgBearAttack, 4: bgInstructions, 5: Win
 
         // add background group
         let background_img = image::open("content/background_grass.jpeg").unwrap().into_rgba8();
@@ -132,6 +132,22 @@ impl engine::Game for Game {
 
         // add Instructions group
         let background_instructions_img = image::open("content/campingInstructions.png").unwrap().into_rgba8();
+        let background_instructions_tex = engine.renderer.gpu.create_texture(
+            &background_instructions_img,
+            wgpu::TextureFormat::Rgba8UnormSrgb,
+            background_instructions_img.dimensions(),
+            Some("background-demo.png"),
+        );
+        engine.renderer.sprites.add_sprite_group(
+            &engine.renderer.gpu,
+            &background_instructions_tex,
+            vec![Transform::zeroed(); 1],
+            vec![SheetRegion::zeroed(); 1],
+            camera,
+        );
+
+        // add Win group
+        let background_instructions_img = image::open("content/winFire.png").unwrap().into_rgba8();
         let background_instructions_tex = engine.renderer.gpu.create_texture(
             &background_instructions_img,
             wgpu::TextureFormat::Rgba8UnormSrgb,
@@ -232,6 +248,10 @@ impl engine::Game for Game {
         }
 
         else if self.state == GameState::BearAttacked{
+            return;
+        }
+
+        else if self.state == GameState::Win{
             return;
         }
 
@@ -466,6 +486,11 @@ impl engine::Game for Game {
         if self.bears.iter().any(|bear| bear.pos.distance(self.guy.pos) <= BEAR_DISTANCE) {
             self.state = GameState::BearAttacked;
         }
+
+        // currently win if have 5 logs and fire
+        if self.logs_collected == 5 && self.has_fire{
+            self.state = GameState::Win;
+        }
         
     }
 
@@ -560,6 +585,53 @@ impl engine::Game for Game {
             .renderer
             .sprites
             .upload_sprites(&engine.renderer.gpu, 3, 0..1);
+
+            engine
+            .renderer
+            .sprites
+            .upload_sprites(&engine.renderer.gpu, 0, 0..1);
+
+            engine
+            .renderer
+            .sprites
+            .upload_sprites(&engine.renderer.gpu, 1, 0..40);
+
+            engine
+            .renderer
+            .sprites
+            .set_camera_all(&engine.renderer.gpu, self.camera);
+            return;
+        }
+
+        else if self.state == GameState::Win{
+            // set bg image
+            let (trfs_bg, uvs_bg) = engine.renderer.sprites.get_sprites_mut(5);
+            trfs_bg[0] = AABB {
+                center: Vec2 {
+                    x: self.camera.screen_pos[0] + W / 2.0,
+                    y: self.camera.screen_pos[1] + H / 2.0,
+                },
+                size: Vec2 { x: W, y: H },
+            }
+            .into();
+            uvs_bg[0] = SheetRegion::new(0, 0, 0, 1, 533, 400);
+
+            // remove bg
+            let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(0);
+            trfs[0] = Transform::zeroed();
+            uvs[0] = SheetRegion::zeroed();
+
+            // remove all other sprites
+            let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(1);
+            for i in 0..40 {
+                trfs[i] = Transform::zeroed();
+                uvs[i] = SheetRegion::zeroed();
+            }
+
+            engine
+            .renderer
+            .sprites
+            .upload_sprites(&engine.renderer.gpu, 5, 0..1);
 
             engine
             .renderer

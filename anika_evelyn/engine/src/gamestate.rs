@@ -4,4 +4,5 @@ pub enum GameState {
     Instructions,
     Play,
     BearAttacked,
+    Win
 }
