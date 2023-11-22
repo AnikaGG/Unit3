@@ -7,8 +7,8 @@ use engine::{geom::*, Camera, Engine, SheetRegion, Transform, Zeroable};
 use rand::Rng;
 const world_W: f32 = 320.0;
 const world_H: f32 = 240.0;
-const W: f32 = 37.75;
-const H: f32 = 18.75;
+const W: f32 = 40.39;
+const H: f32 = 20.06;
 const GUY_SPEED: f32 = 0.75;
 const SPRITE_MAX: usize = 16;
 const CATCH_DISTANCE: f32 = 3.0;
@@ -288,6 +288,46 @@ impl engine::Game for Game {
                 }
             }
         }
+
+        // for (wall_idx, _disp) in contacts.iter() {
+            // TODO: for multiple guys should access self.guys[guy_idx].
+        let guy_aabb = AABB {
+            center: self.guy.pos,
+            size: Vec2 { x: 4.0, y: 4.0 },
+        };
+        // set campsite
+        let campsite_aabb: AABB = AABB {
+            center: Vec2 {
+                x: world_W / 2.0 + 10.0,
+                y: 24.0,
+            },
+            size: Vec2 { x: 10.0, y: 13.6 },
+        }.into();
+        // trfs[37] = AABB {
+        //     center: 
+        //     size: Vec2 { x: 10.0, y: 13.6 },
+        // }.into();
+        let mut disp = campsite_aabb.displacement(guy_aabb).unwrap_or(Vec2::ZERO);
+        // We got to a basically zero collision amount
+        // if disp.x.abs() < std::f32::EPSILON || disp.y.abs() < std::f32::EPSILON {
+        //     break;
+        // }
+        // Guy is left of wall, push left
+        if self.guy.pos.x < campsite_aabb.center.x {
+            disp.x *= -1.0;
+        }
+        // Guy is below wall, push down
+        if self.guy.pos.y < campsite_aabb.center.y {
+            disp.y *= -1.0;
+        }
+        if disp.x.abs() <= disp.y.abs() {
+            self.guy.pos.x += disp.x;
+            // so far it seems resolved; for multiple guys this should probably set a flag on the guy
+        } else if disp.y.abs() <= disp.x.abs() {
+            self.guy.pos.y += disp.y;
+            // so far it seems resolved; for multiple guys this should probably set a flag on the guy
+        }
+        // }
 
         //TBD: can be put in char_actions
         // keep guy in frame
@@ -608,7 +648,7 @@ impl engine::Game for Game {
             },
             size: Vec2 { x: 10.0, y: 13.6 },
         }.into();
-        uvs[37] = SheetRegion::new(0, 769, 759, 4, 230, 314);
+        uvs[37] = SheetRegion::new(0, 769, 759, 2, 230, 314);
 
         // set firepit
         trfs[38] = AABB {
