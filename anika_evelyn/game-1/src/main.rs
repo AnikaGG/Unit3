@@ -17,6 +17,7 @@ const BEAR_DISTANCE: f32 = 4.0;
 const COLLISION_STEPS: usize = 2;
 const FIREPIT_POS: Vec2 = Vec2 {x: world_W/2.0 - 10.0, y: 24.0};
 const TIME_LIMIT: u64 = 120;
+const FIRE_TIME_LIMIT: u64 = 30;
 
 struct Guy {
     pos: Vec2,
@@ -34,6 +35,13 @@ struct Bear {
     bear_count: u32,
 }
 
+#[derive(PartialEq)]
+enum FireSize {
+    Small = 1,
+    Medium = 2,
+    Large = 3,
+}
+
 struct Game {
     camera: engine::Camera,
     trees: Vec<AABB>,
@@ -46,7 +54,9 @@ struct Game {
     bear_anim: Animation,
     state: GameState,
     has_fire: bool,
+    fire_size: FireSize,
     friction_count: u32,
+    fire_timer: Option<Instant>,
 }
 
 impl engine::Game for Game {
@@ -248,7 +258,9 @@ impl engine::Game for Game {
             bear_anim,
             state: GameState::Title,
             has_fire: false,
+            fire_size: FireSize::Medium,
             friction_count: 0,
+            fire_timer: None,
         }
     }
     fn update(&mut self, engine: &mut Engine) {
@@ -439,6 +451,25 @@ impl engine::Game for Game {
             let current_state = self.bear_anim.get_current_state();
         }
 
+        // check fire timer, decrease size and restart timer or set to no fire
+        if let Some(start_time) = self.fire_timer {
+            if new_now.duration_since(start_time) >= Duration::from_secs(FIRE_TIME_LIMIT) {
+                println!("decreasing fire");
+                if self.fire_size == FireSize::Medium {
+                    self.fire_size = FireSize::Small;
+                    self.fire_timer = Some(Instant::now());
+                }
+                else if self.fire_size == FireSize::Large {
+                    self.fire_size = FireSize::Medium;
+                    self.fire_timer = Some(Instant::now());
+                }
+                else if self.fire_size == FireSize::Small {
+                    self.has_fire = false;
+                    self.fire_timer = None;
+                }
+            }
+        }
+
         // check guy collision with log
         if self.guy.log_idx == 0 {
             if let Some(idx) = self
@@ -463,6 +494,20 @@ impl engine::Game for Game {
                     self.guy.log_idx = 0;
                     self.logs_collected = self.logs_collected + 1;
                     println!("{} log in fire", self.logs_collected);
+
+                    // if a fire exists, increase fire size and restart timer
+                    if self.has_fire {
+                        if self.fire_size == FireSize::Small {
+                            self.fire_size = FireSize::Medium;
+                            self.fire_timer = Some(Instant::now());
+                        }
+                        else if self.fire_size == FireSize::Medium {
+                            self.fire_size = FireSize::Large;
+                            self.fire_timer = Some(Instant::now());
+                        } else {
+                            self.fire_timer = Some(Instant::now());
+                        }
+                    }
                 }
             }
         }
@@ -471,13 +516,14 @@ impl engine::Game for Game {
             if self.logs_collected >= 3 && !self.has_fire {
                 if engine.input.is_key_pressed(winit::event::VirtualKeyCode::F) {
                     self.friction_count += 1;
-                    println!("{}", self.friction_count);
-                    println!("increase");
+                    println!("{} increase", self.friction_count);
                 }
                 if self.friction_count > 7 {
-                self.has_fire = true;
-                println!("friction!");
-                self.friction_count = 0;
+                    self.has_fire = true;
+                    self.fire_timer = Some(Instant::now());
+                    self.fire_size = FireSize::Medium;
+                    println!("friction!");
+                    self.friction_count = 0;
                 }
             }
         }
@@ -810,8 +856,15 @@ impl engine::Game for Game {
         }.into();
         uvs[38] = SheetRegion::new(0, 1, 759, 4, 322, 322);
 
-        // add fire
-        let fire_size = if self.has_fire { Vec2 { x: 6.0, y: 6.1 } } else { Vec2 { x: 0.0, y: 0.0 } };
+        // add fire with appropriate size
+        let mut fire_size =  Vec2 { x: 0.0, y: 0.0 };
+        if self.has_fire { 
+            match self.fire_size {
+                FireSize::Small => fire_size = Vec2 { x: 3.0, y: 3.1 },
+                FireSize::Medium => fire_size = Vec2 { x: 6.0, y: 6.1 },
+                FireSize::Large => fire_size = Vec2 { x: 10.0, y: 10.2 },
+            }
+        }
         trfs[39] = AABB {
             center: Vec2 {
                 x: FIREPIT_POS.x,
