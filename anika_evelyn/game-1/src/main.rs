@@ -16,7 +16,7 @@ const CATCH_DISTANCE: f32 = 3.0;
 const BEAR_DISTANCE: f32 = 4.0;
 const COLLISION_STEPS: usize = 2;
 const FIREPIT_POS: Vec2 = Vec2 {x: world_W/2.0 - 10.0, y: 24.0};
-const TIME_LIMIT: u64 = 12;
+const TIME_LIMIT: u64 = 120;
 
 struct Guy {
     pos: Vec2,
@@ -40,14 +40,13 @@ struct Game {
     guy: Guy,
     bears: Vec<Bear>,
     logs: Vec<Log>,
-    // apple_timer: u32,
-    // let start = Instant::now();
     start_timer: Option<Instant>,
     logs_collected: u32,
     font: engine::BitFont,
     bear_anim: Animation,
     state: GameState,
     has_fire: bool,
+    friction_count: u32,
 }
 
 impl engine::Game for Game {
@@ -243,13 +242,13 @@ impl engine::Game for Game {
             trees: trees,
             logs: logs,
             bears: bears,
-            // apple_timer: 0,
             start_timer: None,
             logs_collected: 0,
             font,
             bear_anim,
             state: GameState::Title,
             has_fire: false,
+            friction_count: 0,
         }
     }
     fn update(&mut self, engine: &mut Engine) {
@@ -465,50 +464,23 @@ impl engine::Game for Game {
                     self.logs_collected = self.logs_collected + 1;
                     println!("{} log in fire", self.logs_collected);
                 }
-
-                if self.logs_collected == 3 && !self.has_fire {
-                    self.has_fire = true;
-                    println!("fire!");
-                }
-
-                // if self.logs_collected >= 1 && !self.has_fire {
-                //     // println!("start");
-                //     if engine.input.is_key_pressed(winit::event::VirtualKeyCode::F) {
-                //         friction_count += 1;
-                //         println!("{}", friction_count);
-                //         println!("increase");
-                //     }
-                //     // else {
-                //     //     println!(":(");
-                //     // }
-                //     if friction_count > 5 {
-                //     self.has_fire = true;
-                //     println!("fire!");
-                //     friction_count = 0;
-                //     }
-                // }
             }
         }
 
-        // let mut friction_count = 0;
-        // if FIREPIT_POS.distance(self.guy.pos) <= CATCH_DISTANCE+2.0 {
-        //     if self.logs_collected >= 1 && !self.has_fire {
-        //         // println!("start");
-        //         if engine.input.is_key_pressed(winit::event::VirtualKeyCode::F) {
-        //             friction_count += 1;
-        //             println!("{}", friction_count);
-        //             println!("increase");
-        //         }
-        //         // else {
-        //         //     println!(":(");
-        //         // }
-        //         if friction_count > 5 {
-        //         self.has_fire = true;
-        //         println!("fire!");
-        //         friction_count = 0;
-        //         }
-        //     }
-        // }
+        if FIREPIT_POS.distance(self.guy.pos) <= CATCH_DISTANCE+2.0 {
+            if self.logs_collected >= 3 && !self.has_fire {
+                if engine.input.is_key_pressed(winit::event::VirtualKeyCode::F) {
+                    self.friction_count += 1;
+                    println!("{}", self.friction_count);
+                    println!("increase");
+                }
+                if self.friction_count > 7 {
+                self.has_fire = true;
+                println!("friction!");
+                self.friction_count = 0;
+                }
+            }
+        }
 
         // check guy collision with bear
         if self.bears.iter().any(|bear| bear.pos.distance(self.guy.pos) <= BEAR_DISTANCE) {
