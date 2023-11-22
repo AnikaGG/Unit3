@@ -187,7 +187,7 @@ impl engine::Game for Game {
         let mut bear_anim = Animation {
             states: bear_frames,
             frame_counter: 0,
-            rate: 50,
+            rate: 40,
             state_number: 0,
             is_facing_left: false,
             sprite_width: 64.0,
@@ -336,13 +336,13 @@ impl engine::Game for Game {
 
         // TODO: move bears
         let mut rng = rand::thread_rng();
-        for (bear, i) in self.bears.iter_mut().zip(0..2) {
-            if bear.bear_count == 3 {
+        for (bear, i) in self.bears.iter_mut().zip(0..4) {
+            if bear.bear_count == 4 {
                 let xdir = if rng.gen_range(0..2) > 0 {1.0} else {-1.0};
                 let ydir = if rng.gen_range(0..2) > 0 {1.0} else {-1.0};
                 bear.pos.x += xdir * 1.0;
                 bear.pos.y += ydir * 1.0;
-                let _ = bear.bear_count ==0;
+                bear.bear_count =0;
             }
             else {
                 bear.bear_count+=1;

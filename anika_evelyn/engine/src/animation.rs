@@ -55,7 +55,7 @@ impl Animation {
             self.state_number = self.states.len() - 1;
 
         }
-        if (self.is_facing_left){
+        if self.is_facing_left{
             if self.states[self.state_number][2] > 0.0 {
                 self.states[self.state_number][2] *= -1.0;
                 self.states[self.state_number][0] += self.sprite_width;
