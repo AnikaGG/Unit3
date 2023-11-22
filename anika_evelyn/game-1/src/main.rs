@@ -5,6 +5,7 @@ use engine::animation::Animation;
 use engine::gamestate::GameState;
 use engine::{geom::*, Camera, Engine, SheetRegion, Transform, Zeroable};
 use rand::Rng;
+use std::time::{Duration, Instant};
 const world_W: f32 = 320.0;
 const world_H: f32 = 240.0;
 const W: f32 = 40.39;
@@ -15,6 +16,7 @@ const CATCH_DISTANCE: f32 = 3.0;
 const BEAR_DISTANCE: f32 = 4.0;
 const COLLISION_STEPS: usize = 2;
 const FIREPIT_POS: Vec2 = Vec2 {x: world_W/2.0 - 10.0, y: 24.0};
+const TIME_LIMIT: u64 = 120;
 
 struct Guy {
     pos: Vec2,
@@ -38,7 +40,9 @@ struct Game {
     guy: Guy,
     bears: Vec<Bear>,
     logs: Vec<Log>,
-    apple_timer: u32,
+    // apple_timer: u32,
+    // let start = Instant::now();
+    start_timer: Option<Instant>,
     logs_collected: u32,
     font: engine::BitFont,
     bear_anim: Animation,
@@ -63,7 +67,7 @@ impl engine::Game for Game {
 
         #[cfg(not(target_arch = "wasm32"))]
         // SPRITE GROUPS: 0: bg, 1: sprites
-        // 2: bgTitle, 3: bgBearAttack, 4: bgInstructions, 5: Win
+        // 2: bgTitle, 3: bgBearAttack, 4: bgInstructions, 5: Win, 6: Lose
 
         // add background group
         let background_img = image::open("content/background_grass.jpeg").unwrap().into_rgba8();
@@ -162,6 +166,22 @@ impl engine::Game for Game {
             camera,
         );
 
+        // add Lose group
+        let background_instructions_img = image::open("content/Lose.jpg").unwrap().into_rgba8();
+        let background_instructions_tex = engine.renderer.gpu.create_texture(
+            &background_instructions_img,
+            wgpu::TextureFormat::Rgba8UnormSrgb,
+            background_instructions_img.dimensions(),
+            Some("background-demo.png"),
+        );
+        engine.renderer.sprites.add_sprite_group(
+            &engine.renderer.gpu,
+            &background_instructions_tex,
+            vec![Transform::zeroed(); 1],
+            vec![SheetRegion::zeroed(); 1],
+            camera,
+        );
+
         let guy = Guy {
             pos: Vec2 {
                 x: world_W/2.0,
@@ -223,7 +243,8 @@ impl engine::Game for Game {
             trees: trees,
             logs: logs,
             bears: bears,
-            apple_timer: 0,
+            // apple_timer: 0,
+            start_timer: None,
             logs_collected: 0,
             font,
             bear_anim,
@@ -243,6 +264,7 @@ impl engine::Game for Game {
         else if self.state == GameState::Instructions{
             if engine.input.is_key_pressed(winit::event::VirtualKeyCode::Space) {
                 self.state = GameState::Play;
+                self.start_timer = Some(Instant::now());
             }
             return;
         }
@@ -252,6 +274,10 @@ impl engine::Game for Game {
         }
 
         else if self.state == GameState::Win{
+            return;
+        }
+
+        else if self.state == GameState::Lose{
             return;
         }
 
@@ -491,6 +517,14 @@ impl engine::Game for Game {
         if self.logs_collected == 5 && self.has_fire{
             self.state = GameState::Win;
         }
+
+        let mut new_now = Instant::now();
+        if let Some(start_time) = self.start_timer {
+            if new_now.duration_since(start_time) >= Duration::from_secs(TIME_LIMIT) && !self.has_fire{
+                self.state = GameState::Lose;
+                self.start_timer = None;
+            }
+        }
         
     }
 
@@ -632,6 +666,53 @@ impl engine::Game for Game {
             .renderer
             .sprites
             .upload_sprites(&engine.renderer.gpu, 5, 0..1);
+
+            engine
+            .renderer
+            .sprites
+            .upload_sprites(&engine.renderer.gpu, 0, 0..1);
+
+            engine
+            .renderer
+            .sprites
+            .upload_sprites(&engine.renderer.gpu, 1, 0..40);
+
+            engine
+            .renderer
+            .sprites
+            .set_camera_all(&engine.renderer.gpu, self.camera);
+            return;
+        }
+
+        else if self.state == GameState::Lose{
+            // set bg image
+            let (trfs_bg, uvs_bg) = engine.renderer.sprites.get_sprites_mut(6);
+            trfs_bg[0] = AABB {
+                center: Vec2 {
+                    x: self.camera.screen_pos[0] + W / 2.0,
+                    y: self.camera.screen_pos[1] + H / 2.0,
+                },
+                size: Vec2 { x: W, y: H },
+            }
+            .into();
+            uvs_bg[0] = SheetRegion::new(0, 0, 0, 1, 533, 400);
+
+            // remove bg
+            let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(0);
+            trfs[0] = Transform::zeroed();
+            uvs[0] = SheetRegion::zeroed();
+
+            // remove all other sprites
+            let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(1);
+            for i in 0..40 {
+                trfs[i] = Transform::zeroed();
+                uvs[i] = SheetRegion::zeroed();
+            }
+
+            engine
+            .renderer
+            .sprites
+            .upload_sprites(&engine.renderer.gpu, 6, 0..1);
 
             engine
             .renderer
