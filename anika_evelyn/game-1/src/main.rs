@@ -16,7 +16,7 @@ const CATCH_DISTANCE: f32 = 3.0;
 const BEAR_DISTANCE: f32 = 4.0;
 const COLLISION_STEPS: usize = 2;
 const FIREPIT_POS: Vec2 = Vec2 {x: world_W/2.0 - 10.0, y: 24.0};
-const TIME_LIMIT: u64 = 120;
+const TIME_LIMIT: u64 = 12;
 
 struct Guy {
     pos: Vec2,
@@ -54,7 +54,7 @@ impl engine::Game for Game {
     fn new(engine: &mut Engine) -> Self {
         let camera = Camera {
             screen_pos: [0.0, 0.0],
-            screen_size: [world_W, world_H],
+            screen_size: [W, H],
         };
         #[cfg(target_arch = "wasm32")]
         let sprite_img = {
@@ -280,6 +280,8 @@ impl engine::Game for Game {
         else if self.state == GameState::Lose{
             return;
         }
+
+        let mut new_now = Instant::now();
 
         let mut contacts = Vec::with_capacity(self.trees.len());
         // TODO: for multiple guys this might be better as flags on the guy for what side he's currently colliding with stuff on
@@ -518,7 +520,7 @@ impl engine::Game for Game {
             self.state = GameState::Win;
         }
 
-        let mut new_now = Instant::now();
+        // timer for game
         if let Some(start_time) = self.start_timer {
             if new_now.duration_since(start_time) >= Duration::from_secs(TIME_LIMIT) && !self.has_fire{
                 self.state = GameState::Lose;
