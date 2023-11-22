@@ -50,7 +50,7 @@ impl engine::Game for Game {
     fn new(engine: &mut Engine) -> Self {
         let camera = Camera {
             screen_pos: [0.0, 0.0],
-            screen_size: [W, H],
+            screen_size: [world_W, world_H],
         };
         #[cfg(target_arch = "wasm32")]
         let sprite_img = {
@@ -289,13 +289,11 @@ impl engine::Game for Game {
             }
         }
 
-        // for (wall_idx, _disp) in contacts.iter() {
-            // TODO: for multiple guys should access self.guys[guy_idx].
+        // campsite collision
         let guy_aabb = AABB {
             center: self.guy.pos,
             size: Vec2 { x: 4.0, y: 4.0 },
         };
-        // set campsite
         let campsite_aabb: AABB = AABB {
             center: Vec2 {
                 x: world_W / 2.0 + 10.0,
@@ -303,15 +301,7 @@ impl engine::Game for Game {
             },
             size: Vec2 { x: 10.0, y: 13.6 },
         }.into();
-        // trfs[37] = AABB {
-        //     center: 
-        //     size: Vec2 { x: 10.0, y: 13.6 },
-        // }.into();
         let mut disp = campsite_aabb.displacement(guy_aabb).unwrap_or(Vec2::ZERO);
-        // We got to a basically zero collision amount
-        // if disp.x.abs() < std::f32::EPSILON || disp.y.abs() < std::f32::EPSILON {
-        //     break;
-        // }
         // Guy is left of wall, push left
         if self.guy.pos.x < campsite_aabb.center.x {
             disp.x *= -1.0;
@@ -322,12 +312,9 @@ impl engine::Game for Game {
         }
         if disp.x.abs() <= disp.y.abs() {
             self.guy.pos.x += disp.x;
-            // so far it seems resolved; for multiple guys this should probably set a flag on the guy
         } else if disp.y.abs() <= disp.x.abs() {
             self.guy.pos.y += disp.y;
-            // so far it seems resolved; for multiple guys this should probably set a flag on the guy
         }
-        // }
 
         //TBD: can be put in char_actions
         // keep guy in frame
@@ -423,18 +410,57 @@ impl engine::Game for Game {
         //TBD: press space to release log???
         // check guy collision with firepit to release log
         if self.guy.log_idx > 0 {
-            if FIREPIT_POS.distance(self.guy.pos) <= CATCH_DISTANCE {
-                self.logs[self.guy.log_idx-1].collected = true;
-                self.guy.log_idx = 0;
-                self.logs_collected = self.logs_collected + 1;
-                println!("{} log in fire", self.logs_collected);
+            if FIREPIT_POS.distance(self.guy.pos) <= CATCH_DISTANCE+2.0 {
+                if engine.input.is_key_pressed(winit::event::VirtualKeyCode::Return) {
+                    self.logs[self.guy.log_idx-1].collected = true;
+                    self.guy.log_idx = 0;
+                    self.logs_collected = self.logs_collected + 1;
+                    println!("{} log in fire", self.logs_collected);
+                }
 
                 if self.logs_collected == 3 && !self.has_fire {
                     self.has_fire = true;
                     println!("fire!");
                 }
+
+                // if self.logs_collected >= 1 && !self.has_fire {
+                //     // println!("start");
+                //     if engine.input.is_key_pressed(winit::event::VirtualKeyCode::F) {
+                //         friction_count += 1;
+                //         println!("{}", friction_count);
+                //         println!("increase");
+                //     }
+                //     // else {
+                //     //     println!(":(");
+                //     // }
+                //     if friction_count > 5 {
+                //     self.has_fire = true;
+                //     println!("fire!");
+                //     friction_count = 0;
+                //     }
+                // }
             }
         }
+
+        // let mut friction_count = 0;
+        // if FIREPIT_POS.distance(self.guy.pos) <= CATCH_DISTANCE+2.0 {
+        //     if self.logs_collected >= 1 && !self.has_fire {
+        //         // println!("start");
+        //         if engine.input.is_key_pressed(winit::event::VirtualKeyCode::F) {
+        //             friction_count += 1;
+        //             println!("{}", friction_count);
+        //             println!("increase");
+        //         }
+        //         // else {
+        //         //     println!(":(");
+        //         // }
+        //         if friction_count > 5 {
+        //         self.has_fire = true;
+        //         println!("fire!");
+        //         friction_count = 0;
+        //         }
+        //     }
+        // }
 
         // check guy collision with bear
         if self.bears.iter().any(|bear| bear.pos.distance(self.guy.pos) <= BEAR_DISTANCE) {
@@ -632,7 +658,7 @@ impl engine::Game for Game {
         }
 
         // set trees
-        for i in 21..36 {
+        for i in 21..37 {
             trfs[i] = AABB {
                 center: self.trees[i-21].center,
                 size: Vec2 { x: 11.0, y: 11.0 },
