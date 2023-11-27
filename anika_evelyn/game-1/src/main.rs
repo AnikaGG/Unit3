@@ -503,8 +503,7 @@ impl engine::Game for Game {
                     // recycle log if fire exists, else put log in pit
                     if self.has_fire {
                         self.logs[self.guy.log_idx-1].pos = new_log_pos(&self.trees);
-                    } else {
-                        self.logs[self.guy.log_idx-1].collected = true;
+                        self.logs[self.guy.log_idx-1].collected = false;
                     }
                     self.guy.log_idx = 0;
                     self.logs_collected = self.logs_collected + 1;
