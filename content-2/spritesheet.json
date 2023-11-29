@@ -1,0 +1,355 @@
+{
+	"frames": {
+		"backgirl.png": {
+			"frame": {
+				"x": 1,
+				"y": 1,
+				"w": 93,
+				"h": 174
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 93,
+				"h": 174
+			},
+			"sourceSize": {
+				"w": 93,
+				"h": 174
+			}
+		},
+		"black.png": {
+			"frame": {
+				"x": 96,
+				"y": 1,
+				"w": 80,
+				"h": 120
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 80,
+				"h": 120
+			},
+			"sourceSize": {
+				"w": 80,
+				"h": 120
+			}
+		},
+		"blue.png": {
+			"frame": {
+				"x": 178,
+				"y": 1,
+				"w": 96,
+				"h": 120
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 96,
+				"h": 120
+			},
+			"sourceSize": {
+				"w": 96,
+				"h": 120
+			}
+		},
+		"bluebook.png": {
+			"frame": {
+				"x": 276,
+				"y": 1,
+				"w": 112,
+				"h": 120
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 112,
+				"h": 120
+			},
+			"sourceSize": {
+				"w": 112,
+				"h": 120
+			}
+		},
+		"deathbook.png": {
+			"frame": {
+				"x": 96,
+				"y": 123,
+				"w": 112,
+				"h": 120
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 112,
+				"h": 120
+			},
+			"sourceSize": {
+				"w": 112,
+				"h": 120
+			}
+		},
+		"frontgirl.png": {
+			"frame": {
+				"x": 210,
+				"y": 123,
+				"w": 97,
+				"h": 174
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 97,
+				"h": 174
+			},
+			"sourceSize": {
+				"w": 97,
+				"h": 174
+			}
+		},
+		"green.png": {
+			"frame": {
+				"x": 309,
+				"y": 123,
+				"w": 96,
+				"h": 120
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 96,
+				"h": 120
+			},
+			"sourceSize": {
+				"w": 96,
+				"h": 120
+			}
+		},
+		"leftgirl.png": {
+			"frame": {
+				"x": 1,
+				"y": 245,
+				"w": 86,
+				"h": 170
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 86,
+				"h": 170
+			},
+			"sourceSize": {
+				"w": 86,
+				"h": 170
+			}
+		},
+		"lightblue.png": {
+			"frame": {
+				"x": 89,
+				"y": 245,
+				"w": 96,
+				"h": 120
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 96,
+				"h": 120
+			},
+			"sourceSize": {
+				"w": 96,
+				"h": 120
+			}
+		},
+		"orange.png": {
+			"frame": {
+				"x": 390,
+				"y": 1,
+				"w": 48,
+				"h": 120
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 48,
+				"h": 120
+			},
+			"sourceSize": {
+				"w": 48,
+				"h": 120
+			}
+		},
+		"pink.png": {
+			"frame": {
+				"x": 309,
+				"y": 245,
+				"w": 96,
+				"h": 120
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 96,
+				"h": 120
+			},
+			"sourceSize": {
+				"w": 96,
+				"h": 120
+			}
+		},
+		"purple.png": {
+			"frame": {
+				"x": 440,
+				"y": 1,
+				"w": 80,
+				"h": 120
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 80,
+				"h": 120
+			},
+			"sourceSize": {
+				"w": 80,
+				"h": 120
+			}
+		},
+		"red.png": {
+			"frame": {
+				"x": 407,
+				"y": 123,
+				"w": 96,
+				"h": 120
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 96,
+				"h": 120
+			},
+			"sourceSize": {
+				"w": 96,
+				"h": 120
+			}
+		},
+		"rightgirl.png": {
+			"frame": {
+				"x": 407,
+				"y": 245,
+				"w": 88,
+				"h": 170
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 88,
+				"h": 170
+			},
+			"sourceSize": {
+				"w": 88,
+				"h": 170
+			}
+		},
+		"teal.png": {
+			"frame": {
+				"x": 1,
+				"y": 417,
+				"w": 80,
+				"h": 120
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 80,
+				"h": 120
+			},
+			"sourceSize": {
+				"w": 80,
+				"h": 120
+			}
+		},
+		"white.png": {
+			"frame": {
+				"x": 83,
+				"y": 417,
+				"w": 80,
+				"h": 120
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 80,
+				"h": 120
+			},
+			"sourceSize": {
+				"w": 80,
+				"h": 120
+			}
+		},
+		"yellow.png": {
+			"frame": {
+				"x": 165,
+				"y": 417,
+				"w": 96,
+				"h": 120
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 96,
+				"h": 120
+			},
+			"sourceSize": {
+				"w": 96,
+				"h": 120
+			}
+		}
+	},
+	"meta": {
+		"app": "http://www.codeandweb.com/texturepacker",
+		"version": "1.0",
+		"image": "spritesheet.png",
+		"format": "RGBA8888",
+		"size": {
+			"w": 521,
+			"h": 538
+		},
+		"scale": "1"
+	}
+}
