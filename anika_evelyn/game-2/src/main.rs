@@ -5,13 +5,15 @@ use engine::gamestate::GameState;
 use engine::{geom::*, Camera, Engine, SheetRegion, Transform, Zeroable};
 use rand::Rng;
 use std::time::{Duration, Instant};
+use std::usize;
 const world_W: f32 = 320.0;
 const world_H: f32 = 240.0;
 const W: f32 = 160.0;
 const H: f32 = 80.0;
 const GUY_SPEED: f32 = 0.75;
 const CATCH_DISTANCE: f32 = 9.0;
-const TIME_LIMIT: u64 = 40;
+const TIME_LIMIT: u64 = 20;
+const REMEMBER_TIME_LIMIT: u64 = 4;
 
 struct Guy {
     pos: Vec2,
@@ -36,7 +38,9 @@ struct Game {
     potions: Vec<Potion>,
     books: Vec<Spellbook>,
     level_timer: Option<Instant>,
-    level: u32,
+    timer_length: usize,
+    level: usize,
+    num_potions: usize,
     potions_collected: u32,
     font: engine::BitFont,
     state: GameState,
@@ -228,6 +232,8 @@ impl engine::Game for Game {
             books: books,
             level_timer: None,
             level: 1,
+            timer_length: 0,
+            num_potions: 4,
             potions_collected: 0,
             font: font,
             state: GameState::Title,
@@ -244,13 +250,9 @@ impl engine::Game for Game {
 
         else if self.state == GameState::Instructions{
             if engine.input.is_key_pressed(winit::event::VirtualKeyCode::Space) {
-                self.state = GameState::Play;
+                self.state = GameState::ShowLevel;
                 self.level_timer = Some(Instant::now());
             }
-            return;
-        }
-
-        else if self.state == GameState::BearAttacked{
             return;
         }
 
@@ -259,6 +261,19 @@ impl engine::Game for Game {
         }
 
         else if self.state == GameState::Lose{
+            return;
+        }
+
+        else if self.state == GameState::ShowLevel {
+            let mut new_now = Instant::now();
+            // timer for game
+            if let Some(timer) = self.level_timer {
+                // start game play
+                if new_now.duration_since(timer) >= Duration::from_secs(REMEMBER_TIME_LIMIT){
+                    self.state = GameState::Play;
+                    self.level_timer = Some(Instant::now());
+                }
+            }
             return;
         }
 
@@ -358,10 +373,20 @@ impl engine::Game for Game {
             }
         }
 
-        // currently win if have 5 potions
-        if self.potions_collected >= 5 {
-            println!("you win!");
-            self.state = GameState::Win;
+        // currently win if have 5 potions -> Show new level
+        if self.potions_collected >= self.num_potions.try_into().unwrap() {
+            println!("you won level!");
+            self.state = GameState::ShowLevel;
+            self.level_timer = Some(Instant::now());
+            self.level += 1;
+            self.num_potions += 1;
+            self.potions_collected = 0;
+
+            if self.level == 11 {
+                println!("you win!");
+                self.state = GameState::Win;
+                return;
+            }
         }
 
         // timer for game
@@ -403,9 +428,7 @@ impl engine::Game for Game {
 
         else if self.state == GameState::Instructions {
             // remove title bg
-            let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(2);
-            trfs[0] = Transform::zeroed();
-            uvs[0] = SheetRegion::zeroed();
+            remove_background(2, engine);
 
             // set bg image
             let (trfs_bg, uvs_bg) = engine.renderer.sprites.get_sprites_mut(4);
@@ -418,11 +441,6 @@ impl engine::Game for Game {
             }
             .into();
             uvs_bg[0] = SheetRegion::new(0, 0, 0, 1, 533, 400);
-
-            engine
-            .renderer
-            .sprites
-            .upload_sprites(&engine.renderer.gpu, 2, 0..1);
 
             engine
             .renderer
@@ -450,31 +468,15 @@ impl engine::Game for Game {
             uvs_bg[0] = SheetRegion::new(0, 0, 0, 1, 533, 400);
 
             // remove bg
-            let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(0);
-            trfs[0] = Transform::zeroed();
-            uvs[0] = SheetRegion::zeroed();
+            remove_background(0, engine);
 
             // remove all other sprites
-            let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(1);
-            for i in 0..15 {
-                trfs[i] = Transform::zeroed();
-                uvs[i] = SheetRegion::zeroed();
-            }
+            clear_sprites(engine, self.timer_length);
 
             engine
             .renderer
             .sprites
             .upload_sprites(&engine.renderer.gpu, 3, 0..1);
-
-            engine
-            .renderer
-            .sprites
-            .upload_sprites(&engine.renderer.gpu, 0, 0..1);
-
-            engine
-            .renderer
-            .sprites
-            .upload_sprites(&engine.renderer.gpu, 1, 0..15);
 
             engine
             .renderer
@@ -497,31 +499,15 @@ impl engine::Game for Game {
             uvs_bg[0] = SheetRegion::new(0, 0, 0, 1, 533, 400);
 
             // remove bg
-            let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(0);
-            trfs[0] = Transform::zeroed();
-            uvs[0] = SheetRegion::zeroed();
+            remove_background(0, engine);
 
             // remove all other sprites
-            let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(1);
-            for i in 0..15 {
-                trfs[i] = Transform::zeroed();
-                uvs[i] = SheetRegion::zeroed();
-            }
+            clear_sprites(engine, self.timer_length);
 
             engine
             .renderer
             .sprites
             .upload_sprites(&engine.renderer.gpu, 5, 0..1);
-
-            engine
-            .renderer
-            .sprites
-            .upload_sprites(&engine.renderer.gpu, 0, 0..1);
-
-            engine
-            .renderer
-            .sprites
-            .upload_sprites(&engine.renderer.gpu, 1, 0..15);
 
             engine
             .renderer
@@ -544,16 +530,10 @@ impl engine::Game for Game {
             uvs_bg[0] = SheetRegion::new(0, 0, 0, 1, 533, 400);
 
             // remove bg
-            let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(0);
-            trfs[0] = Transform::zeroed();
-            uvs[0] = SheetRegion::zeroed();
+            remove_background(0, engine);
 
             // remove all other sprites
-            let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(1);
-            for i in 0..40 {
-                trfs[i] = Transform::zeroed();
-                uvs[i] = SheetRegion::zeroed();
-            }
+            clear_sprites(engine, self.timer_length);
 
             engine
             .renderer
@@ -563,36 +543,53 @@ impl engine::Game for Game {
             engine
             .renderer
             .sprites
-            .upload_sprites(&engine.renderer.gpu, 0, 0..1);
-
-            engine
-            .renderer
-            .sprites
-            .upload_sprites(&engine.renderer.gpu, 1, 0..15);
-
-            engine
-            .renderer
-            .sprites
             .set_camera_all(&engine.renderer.gpu, self.camera);
             return;
-        }
+        }  else if self.state == GameState::ShowLevel { 
 
-        // remove instructions bg
-        let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(4);
-        trfs[0] = Transform::zeroed();
-        uvs[0] = SheetRegion::zeroed();
+            // remove instructions bg
+            remove_background(4, engine);
 
-        // set bg image
-        let (trfs_bg, uvs_bg) = engine.renderer.sprites.get_sprites_mut(0);
-        trfs_bg[0] = AABB {
-            center: Vec2 {
-                x: world_W / 2.0,
-                y: world_H / 2.0,
-            },
-            size: Vec2 { x: world_W, y: world_H },
+            // remove all other sprites
+            clear_sprites(engine, self.timer_length);
+
+            // set bg image
+            let (trfs_bg, uvs_bg) = engine.renderer.sprites.get_sprites_mut(0);
+            trfs_bg[0] = AABB {
+                center: Vec2 {
+                    x: world_W / 2.0,
+                    y: world_H / 2.0,
+                },
+                size: Vec2 { x: world_W, y: world_H },
+            }
+            .into();
+            uvs_bg[0] = SheetRegion::new(0, 0, 0, 6, 626, 416);
+
+            engine
+            .renderer
+            .sprites
+            .upload_sprites(&engine.renderer.gpu, 0, 0..1);
+
+            // add potions
+            for i in 0..self.num_potions {
+                let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(1);
+                trfs[i] = AABB {
+                    center: Vec2 {
+                        x: self.camera.screen_pos[0] + ((W - 40.0) /self.num_potions as f32 * i as f32) + 20.0,
+                        y: self.camera.screen_pos[1] + H/2.0,
+                    },
+                    size: Vec2 { x: 9.6, y: 12.0 },
+                }.into();
+                uvs[i] = SheetRegion::new(0, 178, 1, 2, 96, 120);
+            }
+
+            engine
+            .renderer
+            .sprites
+            .upload_sprites(&engine.renderer.gpu, 1, 0..self.num_potions);
+
+            return;
         }
-        .into();
-        uvs_bg[0] = SheetRegion::new(0, 0, 0, 6, 626, 416);
 
         // set sprites
         let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(1);
@@ -655,11 +652,11 @@ impl engine::Game for Game {
         // set timer
         let time_remaining = TIME_LIMIT - self.level_timer.unwrap().elapsed().as_secs();
         let timer_str = time_remaining.to_string();
-        let text_len = timer_str.len();
+        self.timer_length = timer_str.len();
         engine.renderer.sprites.resize_sprite_group(
             &engine.renderer.gpu,
             7,
-            text_len,
+            self.timer_length,
         );
         self.font.draw_text(
             &mut engine.renderer.sprites,
@@ -671,13 +668,9 @@ impl engine::Game for Game {
                 y: self.camera.screen_pos[1] + H / 2.0 + 40.0,
             }
             .into(),
-            16.0,
+            8.0,
         );
 
-        engine
-            .renderer
-            .sprites
-            .upload_sprites(&engine.renderer.gpu, 0, 0..1);
         engine
             .renderer
             .sprites
@@ -685,11 +678,7 @@ impl engine::Game for Game {
         engine
             .renderer
             .sprites
-            .upload_sprites(&engine.renderer.gpu, 4, 0..1);
-        engine
-            .renderer
-            .sprites
-            .upload_sprites(&engine.renderer.gpu, 7, 0..text_len);
+            .upload_sprites(&engine.renderer.gpu, 7, 0..self.timer_length);
         self.camera.screen_pos = [
         (self.guy.pos.x - (W / 2.0)).max(0.0).min(world_W - self.camera.screen_size[0]),
         (self.guy.pos.y - (H / 2.0)).max(0.0).min(world_H - self.camera.screen_size[1]),
@@ -702,4 +691,47 @@ impl engine::Game for Game {
 }
 fn main() {
     Engine::new(winit::window::WindowBuilder::new()).run::<Game>();
+}
+
+
+fn clear_sprites(engine: &mut Engine, timer_len: usize) {
+
+    // remove all other sprites
+    let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(1);
+    for i in 0..15 {
+        trfs[i] = Transform::zeroed();
+        uvs[i] = SheetRegion::zeroed();
+    }
+
+    engine
+    .renderer
+    .sprites
+    .upload_sprites(&engine.renderer.gpu, 1, 0..15);
+
+    // remove all fonts
+    let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(7);
+    for i in 0..timer_len {
+        trfs[i] = Transform::zeroed();
+        uvs[i] = SheetRegion::zeroed();
+    }
+
+    engine
+    .renderer
+    .sprites
+    .upload_sprites(&engine.renderer.gpu, 7, 0..timer_len);
+
+
+}
+
+fn remove_background(background_group: usize, engine: &mut Engine) {
+
+    let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(background_group);
+    trfs[0] = Transform::zeroed();
+    uvs[0] = SheetRegion::zeroed();
+
+    engine
+    .renderer
+    .sprites
+    .upload_sprites(&engine.renderer.gpu, background_group, 0..1);
+
 }
