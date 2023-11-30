@@ -11,7 +11,7 @@ const W: f32 = 160.0;
 const H: f32 = 80.0;
 const GUY_SPEED: f32 = 0.75;
 const CATCH_DISTANCE: f32 = 9.0;
-const TIME_LIMIT: u64 = 120;
+const TIME_LIMIT: u64 = 40;
 
 struct Guy {
     pos: Vec2,
@@ -35,7 +35,8 @@ struct Game {
     guy: Guy,
     potions: Vec<Potion>,
     books: Vec<Spellbook>,
-    start_timer: Option<Instant>,
+    level_timer: Option<Instant>,
+    level: u32,
     potions_collected: u32,
     font: engine::BitFont,
     state: GameState,
@@ -65,7 +66,7 @@ impl engine::Game for Game {
 
         #[cfg(not(target_arch = "wasm32"))]
         // SPRITE GROUPS: 0: bg, 1: sprites
-        // 2: bgTitle, 3: bgBearAttack, 4: bgInstructions, 5: Win, 6: Lose
+        // 2: bgTitle, 3: bgBearAttack, 4: bgInstructions, 5: Win, 6: Lose, 7: font
 
         // add background group
         let background_img = image::open("content-2/tile_floor.jpeg").unwrap().into_rgba8();
@@ -180,6 +181,22 @@ impl engine::Game for Game {
             camera,
         );
 
+        // add font group
+        let font_img = image::open("content-2/numbers.png").unwrap().into_rgba8();
+        let font_tex = engine.renderer.gpu.create_texture(
+            &font_img,
+            wgpu::TextureFormat::Rgba8UnormSrgb,
+            font_img.dimensions(),
+            Some("font.png"),
+        );
+        engine.renderer.sprites.add_sprite_group(
+            &engine.renderer.gpu,
+            &font_tex,
+            vec![Transform::zeroed(); 2],
+            vec![SheetRegion::zeroed(); 2],
+            camera,
+        );
+
         let guy = Guy {
             pos: Vec2 {
                 x: world_W/2.0,
@@ -200,7 +217,7 @@ impl engine::Game for Game {
 
         let font = engine::BitFont::with_sheet_region(
             '0'..='9',
-            SheetRegion::new(0, 0, 512, 0, 80, 8),
+            SheetRegion::new(0, 0, 0, 0, 1600,212),
             10,
         );
 
@@ -209,9 +226,10 @@ impl engine::Game for Game {
             guy,
             potions: potions,
             books: books,
-            start_timer: None,
+            level_timer: None,
+            level: 1,
             potions_collected: 0,
-            font,
+            font: font,
             state: GameState::Title,
         }
     }
@@ -227,7 +245,7 @@ impl engine::Game for Game {
         else if self.state == GameState::Instructions{
             if engine.input.is_key_pressed(winit::event::VirtualKeyCode::Space) {
                 self.state = GameState::Play;
-                self.start_timer = Some(Instant::now());
+                self.level_timer = Some(Instant::now());
             }
             return;
         }
@@ -346,10 +364,10 @@ impl engine::Game for Game {
         }
 
         // timer for game
-        if let Some(start_time) = self.start_timer {
-            if new_now.duration_since(start_time) >= Duration::from_secs(TIME_LIMIT){
+        if let Some(timer) = self.level_timer {
+            if new_now.duration_since(timer) >= Duration::from_secs(TIME_LIMIT){
                 self.state = GameState::Lose;
-                self.start_timer = None;
+                self.level_timer = None;
             }
         }
         
@@ -633,6 +651,28 @@ impl engine::Game for Game {
             }
         }
 
+        // set timer
+        let time_remaining = TIME_LIMIT - self.level_timer.unwrap().elapsed().as_secs();
+        let timer_str = time_remaining.to_string();
+        let text_len = timer_str.len();
+        engine.renderer.sprites.resize_sprite_group(
+            &engine.renderer.gpu,
+            7,
+            text_len,
+        );
+        self.font.draw_text(
+            &mut engine.renderer.sprites,
+            7,
+            0,
+            &timer_str,
+            Vec2 {
+                x: W + 16.0,
+                y: H - 16.0,
+            }
+            .into(),
+            16.0,
+        );
+
         engine
             .renderer
             .sprites
@@ -645,6 +685,10 @@ impl engine::Game for Game {
             .renderer
             .sprites
             .upload_sprites(&engine.renderer.gpu, 4, 0..1);
+        engine
+            .renderer
+            .sprites
+            .upload_sprites(&engine.renderer.gpu, 7, 0..text_len);
         self.camera.screen_pos = [
         (self.guy.pos.x - (W / 2.0)).max(0.0).min(world_W - self.camera.screen_size[0]),
         (self.guy.pos.y - (H / 2.0)).max(0.0).min(world_H - self.camera.screen_size[1]),
