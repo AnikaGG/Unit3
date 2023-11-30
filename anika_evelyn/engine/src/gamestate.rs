@@ -5,5 +5,6 @@ pub enum GameState {
     Play,
     BearAttacked,
     Win,
-    Lose
+    Lose,
+    ShowLevel,
 }

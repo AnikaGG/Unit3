@@ -306,32 +306,36 @@ impl engine::Game for Game {
             }
         }
 
-        // check guy collision with potion
-        if let Some(idx) = self
-        .potions
-        .iter()
-        .position(|potion| potion.pos.distance(self.guy.pos) <= CATCH_DISTANCE)
-        {
-            if !self.potions[idx].collected {
-                self.potions[idx].collected = true;
-                self.potions_collected += 1;
-                println!("got potion");
+        // check return pressed
+        if engine.input.is_key_down(winit::event::VirtualKeyCode::Return) {
 
-                // TODO: add code
+            // check collision with vial
+            if let Some(idx) = self
+            .potions
+            .iter()
+            .position(|potion| potion.pos.distance(self.guy.pos) <= CATCH_DISTANCE)
+            {
+                if !self.potions[idx].collected {
+                    self.potions[idx].collected = true;
+                    self.potions_collected += 1;
+                    println!("got potion");
+
+                    // TODO: add code
+                }
             }
-        }
 
-        // check guy collision with book
-        if let Some(idx) = self
-        .books
-        .iter()
-        .position(|book| book.pos.distance(self.guy.pos) <= CATCH_DISTANCE)
-        {
-            if !self.books[idx].collected {
-                self.books[idx].collected = true;
-                println!("got book");
+            // check guy collision with book 
+            if let Some(idx) = self
+            .books
+            .iter()
+            .position(|book| book.pos.distance(self.guy.pos) <= CATCH_DISTANCE)
+            {
+                if !self.books[idx].collected {
+                    self.books[idx].collected = true;
+                    println!("got book");
 
-                // TODO: add code
+                    // TODO: add code
+                }
             }
         }
 
