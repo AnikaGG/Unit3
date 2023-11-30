@@ -182,7 +182,7 @@ impl engine::Game for Game {
         );
 
         // add font group
-        let font_img = image::open("content-2/numbers.png").unwrap().into_rgba8();
+        let font_img = image::open("content-2/mario_numbers.png").unwrap().into_rgba8();
         let font_tex = engine.renderer.gpu.create_texture(
             &font_img,
             wgpu::TextureFormat::Rgba8UnormSrgb,
@@ -217,7 +217,7 @@ impl engine::Game for Game {
 
         let font = engine::BitFont::with_sheet_region(
             '0'..='9',
-            SheetRegion::new(0, 0, 0, 0, 1600,212),
+            SheetRegion::new(0, 0, 20, 0, 900, 150),
             10,
         );
 
@@ -342,18 +342,19 @@ impl engine::Game for Game {
                 }
             }
 
-            // check guy collision with book 
-            if let Some(idx) = self
-            .books
-            .iter()
-            .position(|book| book.pos.distance(self.guy.pos) <= CATCH_DISTANCE)
-            {
-                if !self.books[idx].collected {
-                    self.books[idx].collected = true;
-                    println!("got book");
+        }
 
-                    // TODO: add code
-                }
+        // check guy collision with book 
+        if let Some(idx) = self
+        .books
+        .iter()
+        .position(|book| book.pos.distance(self.guy.pos) <= CATCH_DISTANCE)
+        {
+            if !self.books[idx].collected {
+                self.books[idx].collected = true;
+                println!("got book");
+
+                // TODO: add code
             }
         }
 
@@ -665,9 +666,9 @@ impl engine::Game for Game {
             7,
             0,
             &timer_str,
-            Vec2 {
-                x: W + 16.0,
-                y: H - 16.0,
+            Vec2 { // put numbers in corner
+                x: self.camera.screen_pos[0] + W / 2.0 - 70.0,
+                y: self.camera.screen_pos[1] + H / 2.0 + 40.0,
             }
             .into(),
             16.0,
