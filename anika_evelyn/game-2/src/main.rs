@@ -41,6 +41,7 @@ struct Game {
     timer_length: usize,
     level: usize,
     num_potions: usize,
+    total_time: u64,
     potions_collected: u32,
     font: engine::BitFont,
     state: GameState,
@@ -207,17 +208,7 @@ impl engine::Game for Game {
                 y: 24.0,
             },
             direction: 0,
-        };
-
-        let mut rng = rand::thread_rng();
-        let potions: Vec<Potion> = (0..10)
-        .map(|_| Potion {pos: new_random_pos(), collected: false, color: rng.gen_range(0..2)})
-        .collect();
-
-        let books: Vec<Spellbook> = (0..4)
-        .map(|_| Spellbook {pos: new_random_pos(), collected: false, color: rng.gen_range(0..2)})
-        .collect();
-        
+        };    
 
         let font = engine::BitFont::with_sheet_region(
             '0'..='9',
@@ -228,11 +219,12 @@ impl engine::Game for Game {
         Game {
             camera,
             guy,
-            potions: potions,
-            books: books,
+            potions: Vec::new(),
+            books: Vec::new(),
             level_timer: None,
             level: 1,
             timer_length: 0,
+            total_time: TIME_LIMIT,
             num_potions: 4,
             potions_collected: 0,
             font: font,
@@ -272,6 +264,16 @@ impl engine::Game for Game {
                 if new_now.duration_since(timer) >= Duration::from_secs(REMEMBER_TIME_LIMIT){
                     self.state = GameState::Play;
                     self.level_timer = Some(Instant::now());
+                    self.total_time = TIME_LIMIT;
+
+                    // reset random positions for potions and spellbooks
+                    let mut rng = rand::thread_rng();
+                    self.potions = (0..10)
+                    .map(|_| Potion {pos: new_random_pos(), collected: false, color: rng.gen_range(0..2)})
+                    .collect();
+                    self.books = (0..4)
+                    .map(|_| Spellbook {pos: new_random_pos(), collected: false, color: rng.gen_range(0..2)})
+                    .collect();
                 }
             }
             return;
@@ -369,7 +371,8 @@ impl engine::Game for Game {
                 self.books[idx].collected = true;
                 println!("got book");
 
-                // TODO: add code
+                // Adding 5 seconds to the timer
+                self.total_time += 5;
             }
         }
 
@@ -650,7 +653,7 @@ impl engine::Game for Game {
         }
 
         // set timer
-        let time_remaining = TIME_LIMIT - self.level_timer.unwrap().elapsed().as_secs();
+        let time_remaining = self.total_time - self.level_timer.unwrap().elapsed().as_secs();
         let timer_str = time_remaining.to_string();
         self.timer_length = timer_str.len();
         engine.renderer.sprites.resize_sprite_group(
