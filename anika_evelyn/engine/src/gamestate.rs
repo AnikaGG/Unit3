@@ -3,7 +3,7 @@ pub enum GameState {
     Title,
     Instructions,
     Play,
-    BearAttacked,
+    Attack,
     Win,
     Lose,
     ShowLevel,

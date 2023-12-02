@@ -457,7 +457,7 @@ impl engine::Game for Game {
             return;
         }
 
-        else if self.state == GameState::BearAttacked{
+        else if self.state == GameState::Attack{
             // set bg image
             let (trfs_bg, uvs_bg) = engine.renderer.sprites.get_sprites_mut(3);
             trfs_bg[0] = AABB {

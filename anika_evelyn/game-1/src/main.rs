@@ -3,6 +3,7 @@
 use engine::wgpu;
 use engine::animation::Animation;
 use engine::gamestate::GameState;
+// use engine::action::Action;
 use engine::{geom::*, Camera, Engine, SheetRegion, Transform, Zeroable};
 use rand::Rng;
 use std::time::{Duration, Instant};
@@ -290,7 +291,7 @@ impl engine::Game for Game {
             return;
         }
 
-        else if self.state == GameState::BearAttacked{
+        else if self.state == GameState::Attack{
             return;
         }
 
@@ -387,7 +388,6 @@ impl engine::Game for Game {
 
         //TBD: can be put in char_actions
         // keep guy in frame
-        // check for guy collision with tree
         let xdir = engine.input.key_axis(engine::Key::Left, engine::Key::Right);
         if self.guy.pos.x >= world_W-2.0 {
             self.guy.pos.x = world_W - 2.5;
@@ -443,6 +443,7 @@ impl engine::Game for Game {
             else {
                 bear.bear_count+=1;
             }
+
             // keep bear in frame
             if bear.pos.x >= world_W {
                 bear.pos.x = world_W - 1.0;
@@ -544,7 +545,7 @@ impl engine::Game for Game {
 
         // check guy collision with bear
         if self.bears.iter().any(|bear| bear.pos.distance(self.guy.pos) <= BEAR_DISTANCE) {
-            self.state = GameState::BearAttacked;
+            self.state = GameState::Attack;
         }
 
         // currently win if have 5 logs and fire
@@ -624,7 +625,7 @@ impl engine::Game for Game {
             return;
         }
 
-        else if self.state == GameState::BearAttacked{
+        else if self.state == GameState::Attack{
             // set bg image
             let (trfs_bg, uvs_bg) = engine.renderer.sprites.get_sprites_mut(3);
             trfs_bg[0] = AABB {
