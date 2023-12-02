@@ -12,7 +12,7 @@ const W: f32 = 160.0;
 const H: f32 = 80.0;
 const GUY_SPEED: f32 = 0.75;
 const CATCH_DISTANCE: f32 = 9.0;
-const TIME_LIMIT: u64 = 20;
+const TIME_LIMIT: u64 = 30;
 const REMEMBER_TIME_LIMIT: u64 = 4;
 
 struct Guy {
@@ -23,12 +23,14 @@ struct Guy {
 struct Potion {
     pos: Vec2,
     collected: bool,
+    // 0: blue, 1: purple, 2: green, 3: red, 4: yellow
     color: usize,
 }
 
 struct Spellbook {
     pos: Vec2,
     collected: bool,
+    // 0: good, 1: death
     color: usize,
 }
 
@@ -36,6 +38,7 @@ struct Game {
     camera: engine::Camera,
     guy: Guy,
     potions: Vec<Potion>,
+    level_potions: Vec<i32>,
     books: Vec<Spellbook>,
     level_timer: Option<Instant>,
     timer_length: usize,
@@ -58,7 +61,7 @@ impl engine::Game for Game {
     fn new(engine: &mut Engine) -> Self {
         let camera = Camera {
             screen_pos: [0.0, 0.0],
-            screen_size: [W, H],
+            screen_size: [world_W, world_H],
         };
         #[cfg(target_arch = "wasm32")]
         let sprite_img = {
@@ -76,7 +79,6 @@ impl engine::Game for Game {
         // add background group
         let background_img = image::open("content-2/tile_floor.jpeg").unwrap().into_rgba8();
         let background_tex = engine.renderer.gpu.create_texture(
-            //createarraytexture
             &background_img,
             wgpu::TextureFormat::Rgba8UnormSrgb,
             background_img.dimensions(),
@@ -208,7 +210,14 @@ impl engine::Game for Game {
                 y: 24.0,
             },
             direction: 0,
-        };    
+        };
+
+        // initialize random sequence
+        let mut level_potions: Vec<i32> = Vec::new();
+        for i in 0..5 {
+            let mut rng = rand::thread_rng();
+            level_potions.push(rng.gen_range(0..5));
+        }
 
         let font = engine::BitFont::with_sheet_region(
             '0'..='9',
@@ -220,6 +229,7 @@ impl engine::Game for Game {
             camera,
             guy,
             potions: Vec::new(),
+            level_potions: level_potions,
             books: Vec::new(),
             level_timer: None,
             level: 1,
@@ -266,13 +276,20 @@ impl engine::Game for Game {
                     self.level_timer = Some(Instant::now());
                     self.total_time = TIME_LIMIT;
 
-                    // reset random positions for potions and spellbooks
                     let mut rng = rand::thread_rng();
+                    // reset random positions for 2 of each potion
                     self.potions = (0..10)
-                    .map(|_| Potion {pos: new_random_pos(), collected: false, color: rng.gen_range(0..2)})
+                    .map(|i| Potion {pos: new_random_pos(), collected: false, 
+                        color: if i < 2 { 0 } 
+                        else if i < 4 { 1 }
+                        else if i < 6 { 2 }
+                        else if i < 8 { 3 }
+                        else if i < 10 { 4 }
+                        else {0}})
                     .collect();
+                    // reset random positions of 2 good and 2 death spellbook
                     self.books = (0..4)
-                    .map(|_| Spellbook {pos: new_random_pos(), collected: false, color: rng.gen_range(0..2)})
+                    .map(|i| Spellbook {pos: new_random_pos(), collected: false, color: if i < 2 { 0 } else { 1 },})
                     .collect();
                 }
             }
@@ -297,7 +314,7 @@ impl engine::Game for Game {
             self.guy.pos.y = world_H - 2.5;
         }
         else if self.guy.pos.y <= 2.0 {
-            self.guy.pos.y = 2.5;
+            self.guy.pos.y = 5.0;
         }
         else {
             self.guy.pos.y += ydir * GUY_SPEED;
@@ -384,6 +401,11 @@ impl engine::Game for Game {
             self.level += 1;
             self.num_potions += 1;
             self.potions_collected = 0;
+            // new potion sequence
+            for i in 0..self.num_potions {
+                let mut rng = rand::thread_rng();
+                self.level_potions.push(rng.gen_range(0..5));
+            }
 
             if self.level == 11 {
                 println!("you win!");
@@ -573,7 +595,7 @@ impl engine::Game for Game {
             .sprites
             .upload_sprites(&engine.renderer.gpu, 0, 0..1);
 
-            // add potions
+            // add potion sequence to screen
             for i in 0..self.num_potions {
                 let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(1);
                 trfs[i] = AABB {
@@ -583,8 +605,38 @@ impl engine::Game for Game {
                     },
                     size: Vec2 { x: 9.6, y: 12.0 },
                 }.into();
-                uvs[i] = SheetRegion::new(0, 178, 1, 2, 96, 120);
+                if self.level_potions[i] == 0 {
+                    uvs[i] = SheetRegion::new(0, 178, 1, 2, 96, 120);
+                }
+                // if self.potions[i-1].color == 0 {
+                //     uvs[i] = SheetRegion::new(0, 178, 1, 2, 96, 120);
+                // }
+                else if self.level_potions[i] == 1 {
+                    uvs[i] = SheetRegion::new(0, 440, 1, 2, 80, 120);
+                }
+                else if self.level_potions[i] == 2 {
+                    uvs[i] = SheetRegion::new(0, 309, 123, 2, 96, 120);
+                }
+                else if self.level_potions[i] == 3 {
+                    uvs[i] = SheetRegion::new(0, 407, 123, 2, 96, 120);
+                }
+                else if self.level_potions[i] == 4 {
+                    uvs[i] = SheetRegion::new(0, 165, 417, 2, 96, 120);
+                }
             }
+
+            // // add potions
+            // for i in 0..self.num_potions {
+            //     let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(1);
+            //     trfs[i] = AABB {
+            //         center: Vec2 {
+            //             x: self.camera.screen_pos[0] + ((W - 40.0) /self.num_potions as f32 * i as f32) + 20.0,
+            //             y: self.camera.screen_pos[1] + H/2.0,
+            //         },
+            //         size: Vec2 { x: 9.6, y: 12.0 },
+            //     }.into();
+            //     uvs[i] = SheetRegion::new(0, 178, 1, 2, 96, 120);
+            // }
 
             engine
             .renderer
@@ -625,6 +677,7 @@ impl engine::Game for Game {
         // SPRITE INDICES: man (0), potions (1-10), spellbooks (11-14)
 
         // set potions
+        // 0: blue, 1: purple, 2: green, 3: red, 4: yellow
         for i in 1..11 {
             if self.potions[i-1].collected { 
                 trfs[i] = Transform::zeroed();
@@ -634,11 +687,25 @@ impl engine::Game for Game {
                     center: self.potions[i-1].pos,
                     size: Vec2 { x: 9.6, y: 12.0 },
                 }.into();
-                uvs[i] = SheetRegion::new(0, 178, 1, 2, 96, 120);
+                if self.potions[i-1].color == 0 {
+                    uvs[i] = SheetRegion::new(0, 178, 1, 2, 96, 120);
+                }
+                else if self.potions[i-1].color == 1 {
+                    uvs[i] = SheetRegion::new(0, 440, 1, 2, 80, 120);
+                }
+                else if self.potions[i-1].color == 2 {
+                    uvs[i] = SheetRegion::new(0, 309, 123, 2, 96, 120);
+                }
+                else if self.potions[i-1].color == 3 {
+                    uvs[i] = SheetRegion::new(0, 407, 123, 2, 96, 120);
+                }
+                else if self.potions[i-1].color == 4 {
+                    uvs[i] = SheetRegion::new(0, 165, 417, 2, 96, 120);
+                }
             }
         }
 
-        // set spellbooks
+        // set good spellbook
         for i in 11..15 {
             if self.books[i-11].collected { 
                 trfs[i] = Transform::zeroed();
@@ -648,7 +715,12 @@ impl engine::Game for Game {
                     center: self.books[i-11].pos,
                     size: Vec2 { x: 11.2, y: 12.0 },
                 }.into();
-                uvs[i] = SheetRegion::new(0, 276, 1, 4, 112, 120);
+                if self.books[i-11].color == 0 {
+                    uvs[i] = SheetRegion::new(0, 276, 1, 4, 112, 120);
+                }
+                else {
+                    uvs[i] = SheetRegion::new(0, 96, 123, 4, 112, 120);
+                }
             }
         }
 
