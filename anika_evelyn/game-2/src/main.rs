@@ -43,7 +43,6 @@ struct Game {
     level_timer: Option<Instant>,
     timer_length: usize,
     level: usize,
-    num_potions: usize,
     total_time: u64,
     potions_collected: u32,
     font: engine::BitFont,
@@ -235,7 +234,6 @@ impl engine::Game for Game {
             level: 1,
             timer_length: 0,
             total_time: TIME_LIMIT,
-            num_potions: 4,
             potions_collected: 0,
             font: font,
             state: GameState::Title,
@@ -399,15 +397,18 @@ impl engine::Game for Game {
         }
 
         // currently win if have 5 potions -> Show new level
-        if self.potions_collected >= self.num_potions.try_into().unwrap() {
+        if self.potions_collected >= (self.level_potions.len()-1).try_into().unwrap() {
             println!("you won level!");
+            println!("{}", self.level_potions.len()-1);
+
             self.state = GameState::ShowLevel;
             self.level_timer = Some(Instant::now());
             self.level += 1;
-            self.num_potions += 1;
+            let mut new_len = self.level_potions.len()+1;
             self.potions_collected = 0;
             // new potion sequence
-            for i in 0..self.num_potions {
+            self.level_potions.clear();
+            for i in 0..new_len {
                 let mut rng = rand::thread_rng();
                 self.level_potions.push(rng.gen_range(0..5));
             }
@@ -601,11 +602,11 @@ impl engine::Game for Game {
             .upload_sprites(&engine.renderer.gpu, 0, 0..1);
 
             // add potion sequence to screen
-            for i in 0..self.num_potions {
+            for i in 0..self.level_potions.len()-1 {
                 let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(1);
                 trfs[i] = AABB {
                     center: Vec2 {
-                        x: self.camera.screen_pos[0] + ((W - 40.0) /self.num_potions as f32 * i as f32) + 20.0,
+                        x: self.camera.screen_pos[0] + ((W - 40.0) /(self.level_potions.len()-1) as f32 * i as f32) + 20.0,
                         y: self.camera.screen_pos[1] + H/2.0,
                     },
                     size: Vec2 { x: 9.6, y: 12.0 },
@@ -613,9 +614,6 @@ impl engine::Game for Game {
                 if self.level_potions[i] == 0 {
                     uvs[i] = SheetRegion::new(0, 178, 1, 2, 96, 120);
                 }
-                // if self.potions[i-1].color == 0 {
-                //     uvs[i] = SheetRegion::new(0, 178, 1, 2, 96, 120);
-                // }
                 else if self.level_potions[i] == 1 {
                     uvs[i] = SheetRegion::new(0, 440, 1, 2, 80, 120);
                 }
@@ -630,23 +628,10 @@ impl engine::Game for Game {
                 }
             }
 
-            // // add potions
-            // for i in 0..self.num_potions {
-            //     let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(1);
-            //     trfs[i] = AABB {
-            //         center: Vec2 {
-            //             x: self.camera.screen_pos[0] + ((W - 40.0) /self.num_potions as f32 * i as f32) + 20.0,
-            //             y: self.camera.screen_pos[1] + H/2.0,
-            //         },
-            //         size: Vec2 { x: 9.6, y: 12.0 },
-            //     }.into();
-            //     uvs[i] = SheetRegion::new(0, 178, 1, 2, 96, 120);
-            // }
-
             engine
             .renderer
             .sprites
-            .upload_sprites(&engine.renderer.gpu, 1, 0..self.num_potions);
+            .upload_sprites(&engine.renderer.gpu, 1, 0..(self.level_potions.len()-1));
 
             return;
         }
