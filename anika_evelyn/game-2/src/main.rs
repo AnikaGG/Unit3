@@ -8,8 +8,8 @@ use std::time::{Duration, Instant};
 use std::usize;
 const world_W: f32 = 320.0;
 const world_H: f32 = 240.0;
-const W: f32 = 160.0;
-const H: f32 = 80.0;
+const W: f32 = 240.0;
+const H: f32 = 120.0;
 const GUY_SPEED: f32 = 0.75;
 const CATCH_DISTANCE: f32 = 9.0;
 const TIME_LIMIT: u64 = 45;
@@ -695,7 +695,7 @@ impl engine::Game for Game {
         // set guy
         trfs[0] = AABB {
             center: self.guy.pos,
-            size: Vec2 { x: 8.9, y: 17.25 },
+            size: Vec2 { x: 13.35, y: 25.875 },
         }
         .into();
         if self.guy.direction == 0 {
@@ -776,8 +776,8 @@ impl engine::Game for Game {
             0,
             &timer_str,
             Vec2 { // put numbers in corner
-                x: self.camera.screen_pos[0] + W / 2.0 - 70.0,
-                y: self.camera.screen_pos[1] + H / 2.0 + 40.0,
+                x: self.camera.screen_pos[0] + W / 2.0 - 110.0,
+                y: self.camera.screen_pos[1] + H / 2.0 + 60.0,
             }
             .into(),
             8.0,
