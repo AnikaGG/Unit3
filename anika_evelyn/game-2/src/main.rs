@@ -48,6 +48,7 @@ struct Game {
     potions_collected: Vec<i32>,
     font: engine::BitFont,
     state: GameState,
+    restart: bool,
 }
 
 // function creates a new random position
@@ -238,6 +239,7 @@ impl engine::Game for Game {
             potions_collected: Vec::new(),
             font: font,
             state: GameState::Title,
+            restart: false,
         }
     }
     fn update(&mut self, engine: &mut Engine) {
@@ -404,6 +406,18 @@ impl engine::Game for Game {
                 }
                 else {
                     println!("wrong sequence!");
+                    // self.restart == true;
+                    self.state = GameState::ShowLevel;
+                    self.level_timer = Some(Instant::now());
+                    // self.level += 1;
+                    let mut new_len = self.level_potions.len();
+                    self.potions_collected.clear();
+                    // new potion sequence for second life
+                    self.level_potions.clear();
+                    for i in 0..new_len {
+                        let mut rng = rand::thread_rng();
+                        self.level_potions.push(rng.gen_range(0..5));
+                    }
                 }
             }
         }
