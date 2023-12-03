@@ -20,6 +20,7 @@ struct Guy {
     direction: usize, // 0: front, 1: back, 2: left, 3: right
 }
 
+#[derive(Clone)]
 struct Potion {
     pos: Vec2,
     collected: bool,
@@ -44,7 +45,7 @@ struct Game {
     timer_length: usize,
     level: usize,
     total_time: u64,
-    potions_collected: u32,
+    potions_collected: Vec<i32>,
     font: engine::BitFont,
     state: GameState,
 }
@@ -213,7 +214,7 @@ impl engine::Game for Game {
 
         // initialize random sequence
         let mut level_potions: Vec<i32> = Vec::new();
-        for i in 0..5 {
+        for i in 0..4 {
             let mut rng = rand::thread_rng();
             level_potions.push(rng.gen_range(0..5));
         }
@@ -234,7 +235,7 @@ impl engine::Game for Game {
             level: 1,
             timer_length: 0,
             total_time: TIME_LIMIT,
-            potions_collected: 0,
+            potions_collected: Vec::new(),
             font: font,
             state: GameState::Title,
         }
@@ -367,13 +368,44 @@ impl engine::Game for Game {
             {
                 if !self.potions[idx].collected {
                     self.potions[idx].collected = true;
-                    self.potions_collected += 1;
+                    self.potions_collected.push(self.potions[idx].color as i32);
                     println!("got potion");
-
                     // TODO: add code
                 }
             }
 
+        }
+
+        // win level if same input sequence
+        if !self.potions_collected.is_empty() && !self.level_potions.is_empty() {
+            if (self.potions_collected.len()-1) >= (self.level_potions.len()-1).try_into().unwrap() {
+                println!("comp sequence [{}]", self.level_potions.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
+                println!("your sequence [{}]", self.potions_collected.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
+                // compare color index
+                if self.level_potions == self.potions_collected {
+                    println!("you won level!");
+                    self.state = GameState::ShowLevel;
+                    self.level_timer = Some(Instant::now());
+                    self.level += 1;
+                    let mut new_len = self.level_potions.len()+1;
+                    self.potions_collected.clear();
+                    // new potion sequence
+                    self.level_potions.clear();
+                    for i in 0..new_len {
+                        let mut rng = rand::thread_rng();
+                        self.level_potions.push(rng.gen_range(0..5));
+                    }
+    
+                    if self.level == 11 {
+                        println!("you win!");
+                        self.state = GameState::Win;
+                        return;
+                    }
+                }
+                else {
+                    println!("wrong sequence!");
+                }
+            }
         }
 
         // check guy collision with book 
@@ -393,30 +425,6 @@ impl engine::Game for Game {
                     // Removing 7 seconds to the timer
                     self.total_time -= 7;
                 }
-            }
-        }
-
-        // currently win if have 5 potions -> Show new level
-        if self.potions_collected >= (self.level_potions.len()-1).try_into().unwrap() {
-            println!("you won level!");
-            println!("{}", self.level_potions.len()-1);
-
-            self.state = GameState::ShowLevel;
-            self.level_timer = Some(Instant::now());
-            self.level += 1;
-            let mut new_len = self.level_potions.len()+1;
-            self.potions_collected = 0;
-            // new potion sequence
-            self.level_potions.clear();
-            for i in 0..new_len {
-                let mut rng = rand::thread_rng();
-                self.level_potions.push(rng.gen_range(0..5));
-            }
-
-            if self.level == 11 {
-                println!("you win!");
-                self.state = GameState::Win;
-                return;
             }
         }
 
@@ -602,11 +610,12 @@ impl engine::Game for Game {
             .upload_sprites(&engine.renderer.gpu, 0, 0..1);
 
             // add potion sequence to screen
-            for i in 0..self.level_potions.len()-1 {
+            //CHANGEEEE
+            for i in 0..self.level_potions.len() {
                 let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(1);
                 trfs[i] = AABB {
                     center: Vec2 {
-                        x: self.camera.screen_pos[0] + ((W - 40.0) /(self.level_potions.len()-1) as f32 * i as f32) + 20.0,
+                        x: self.camera.screen_pos[0] + ((W - 40.0) /(self.level_potions.len()) as f32 * i as f32) + 20.0,
                         y: self.camera.screen_pos[1] + H/2.0,
                     },
                     size: Vec2 { x: 9.6, y: 12.0 },
@@ -631,7 +640,7 @@ impl engine::Game for Game {
             engine
             .renderer
             .sprites
-            .upload_sprites(&engine.renderer.gpu, 1, 0..(self.level_potions.len()-1));
+            .upload_sprites(&engine.renderer.gpu, 1, 0..(self.level_potions.len()));
 
             return;
         }
