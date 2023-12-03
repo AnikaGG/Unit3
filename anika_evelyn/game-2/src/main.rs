@@ -48,7 +48,6 @@ struct Game {
     potions_collected: Vec<i32>,
     font: engine::BitFont,
     state: GameState,
-    restart: bool,
 }
 
 // function creates a new random position
@@ -239,7 +238,6 @@ impl engine::Game for Game {
             potions_collected: Vec::new(),
             font: font,
             state: GameState::Title,
-            restart: false,
         }
     }
     fn update(&mut self, engine: &mut Engine) {
@@ -275,7 +273,12 @@ impl engine::Game for Game {
                 if new_now.duration_since(timer) >= Duration::from_secs(REMEMBER_TIME_LIMIT){
                     self.state = GameState::Play;
                     self.level_timer = Some(Instant::now());
-                    self.total_time = TIME_LIMIT;
+                    if self.level % 2 == 0 {
+                        self.total_time = TIME_LIMIT-5;
+                    }
+                    else {
+                        self.total_time = TIME_LIMIT;
+                    }
 
                     let mut rng = rand::thread_rng();
                     // reset random positions for 2 of each potion
@@ -389,14 +392,36 @@ impl engine::Game for Game {
                     self.state = GameState::ShowLevel;
                     self.level_timer = Some(Instant::now());
                     self.level += 1;
-                    let mut new_len = self.level_potions.len()+1;
-                    self.potions_collected.clear();
-                    // new potion sequence
-                    self.level_potions.clear();
-                    for i in 0..new_len {
-                        let mut rng = rand::thread_rng();
-                        self.level_potions.push(rng.gen_range(0..5));
+
+                    if self.level % 2 == 0 {
+                        let mut new_len = self.level_potions.len();
+                        self.potions_collected.clear();
+                        // new potion sequence
+                        self.level_potions.clear();
+                        for i in 0..new_len {
+                            let mut rng = rand::thread_rng();
+                            self.level_potions.push(rng.gen_range(0..5));
+                        }
                     }
+                    else {
+                        let mut new_len = self.level_potions.len()+1;
+                        self.potions_collected.clear();
+                        // new potion sequence
+                        self.level_potions.clear();
+                        for i in 0..new_len {
+                            let mut rng = rand::thread_rng();
+                            self.level_potions.push(rng.gen_range(0..5));
+                        }
+                    }
+
+                    // let mut new_len = self.level_potions.len()+1;
+                    // self.potions_collected.clear();
+                    // // new potion sequence
+                    // self.level_potions.clear();
+                    // for i in 0..new_len {
+                    //     let mut rng = rand::thread_rng();
+                    //     self.level_potions.push(rng.gen_range(0..5));
+                    // }
     
                     if self.level == 11 {
                         println!("you win!");
@@ -406,7 +431,6 @@ impl engine::Game for Game {
                 }
                 else {
                     println!("wrong sequence!");
-                    // self.restart == true;
                     self.state = GameState::ShowLevel;
                     self.level_timer = Some(Instant::now());
                     // self.level += 1;
