@@ -387,9 +387,14 @@ impl engine::Game for Game {
             if !self.books[idx].collected {
                 self.books[idx].collected = true;
                 println!("got book");
-
-                // Adding 5 seconds to the timer
-                self.total_time += 5;
+                if self.books[idx].color== 0 {
+                    // Adding 5 seconds to the timer
+                    self.total_time += 5;
+                }
+                else {
+                    // Removing 7 seconds to the timer
+                    self.total_time -= 7;
+                }
             }
         }
 
