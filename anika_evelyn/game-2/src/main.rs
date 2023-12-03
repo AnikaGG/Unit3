@@ -12,7 +12,7 @@ const W: f32 = 160.0;
 const H: f32 = 80.0;
 const GUY_SPEED: f32 = 0.75;
 const CATCH_DISTANCE: f32 = 9.0;
-const TIME_LIMIT: u64 = 30;
+const TIME_LIMIT: u64 = 45;
 const REMEMBER_TIME_LIMIT: u64 = 4;
 
 struct Guy {
@@ -61,7 +61,7 @@ impl engine::Game for Game {
     fn new(engine: &mut Engine) -> Self {
         let camera = Camera {
             screen_pos: [0.0, 0.0],
-            screen_size: [world_W, world_H],
+            screen_size: [W, H],
         };
         #[cfg(target_arch = "wasm32")]
         let sprite_img = {
