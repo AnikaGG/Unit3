@@ -20,10 +20,9 @@ struct Guy {
     direction: usize, // 0: front, 1: back, 2: left, 3: right
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 struct Potion {
     pos: Vec2,
-    collected: bool,
     // 0: blue, 1: purple, 2: green, 3: red, 4: yellow
     color: usize,
 }
@@ -51,9 +50,14 @@ struct Game {
 }
 
 // function creates a new random position
-fn new_random_pos() -> Vec2 {
+fn new_random_pos(potions: &Vec<Potion>) -> Vec2 {
+
     let mut rng = rand::thread_rng();
-    return Vec2 {x: rng.gen_range(0.0..world_W-1.0), y: rng.gen_range(0.0..world_H-1.0)};
+    let mut new_pos = Vec2 {x: rng.gen_range(0.0..world_W-1.0), y: rng.gen_range(0.0..world_H-1.0)};
+    while potions.iter().any(|potion| potion.pos.distance(new_pos) <= 6.0) {
+        new_pos = Vec2 {x: rng.gen_range(0.0..world_W-1.0), y: rng.gen_range(0.0..world_H-1.0)};
+    }
+    return new_pos;
 }
 
 
@@ -283,7 +287,7 @@ impl engine::Game for Game {
                     let mut rng = rand::thread_rng();
                     // reset random positions for 2 of each potion
                     self.potions = (0..10)
-                    .map(|i| Potion {pos: new_random_pos(), collected: false, 
+                    .map(|i| Potion {pos: new_random_pos(&self.potions),
                         color: if i < 2 { 0 } 
                         else if i < 4 { 1 }
                         else if i < 6 { 2 }
@@ -293,7 +297,7 @@ impl engine::Game for Game {
                     .collect();
                     // reset random positions of 2 good and 2 death spellbook
                     self.books = (0..4)
-                    .map(|i| Spellbook {pos: new_random_pos(), collected: false, color: if i < 2 { 0 } else { 1 },})
+                    .map(|i| Spellbook {pos: new_random_pos(&self.potions), collected: false, color: if i < 2 { 0 } else { 1 },})
                     .collect();
                 }
             }
@@ -363,7 +367,7 @@ impl engine::Game for Game {
         }
 
         // check return pressed
-        if engine.input.is_key_down(winit::event::VirtualKeyCode::Return) {
+        if engine.input.is_key_down(winit::event::VirtualKeyCode::Space) {
 
             // check collision with vial
             if let Some(idx) = self
@@ -371,12 +375,10 @@ impl engine::Game for Game {
             .iter()
             .position(|potion| potion.pos.distance(self.guy.pos) <= CATCH_DISTANCE)
             {
-                if !self.potions[idx].collected {
-                    self.potions[idx].collected = true;
-                    self.potions_collected.push(self.potions[idx].color as i32);
-                    println!("got potion");
-                    // TODO: add code
-                }
+                self.potions_collected.push(self.potions[idx].color as i32);
+                println!("got potion");
+                // change potion position
+                self.potions[idx].pos = new_random_pos(&self.potions);
             }
 
         }
@@ -531,7 +533,7 @@ impl engine::Game for Game {
             return;
         }
 
-        else if self.state == GameState::Attack{
+        else if self.state == GameState::Attack {
             // set bg image
             let (trfs_bg, uvs_bg) = engine.renderer.sprites.get_sprites_mut(3);
             trfs_bg[0] = AABB {
@@ -716,29 +718,24 @@ impl engine::Game for Game {
         // set potions
         // 0: blue, 1: purple, 2: green, 3: red, 4: yellow
         for i in 1..11 {
-            if self.potions[i-1].collected { 
-                trfs[i] = Transform::zeroed();
-                uvs[i] = SheetRegion::zeroed();
-            } else {
-                trfs[i] = AABB {
-                    center: self.potions[i-1].pos,
-                    size: Vec2 { x: 9.6, y: 12.0 },
-                }.into();
-                if self.potions[i-1].color == 0 {
-                    uvs[i] = SheetRegion::new(0, 178, 1, 2, 96, 120);
-                }
-                else if self.potions[i-1].color == 1 {
-                    uvs[i] = SheetRegion::new(0, 440, 1, 2, 80, 120);
-                }
-                else if self.potions[i-1].color == 2 {
-                    uvs[i] = SheetRegion::new(0, 309, 123, 2, 96, 120);
-                }
-                else if self.potions[i-1].color == 3 {
-                    uvs[i] = SheetRegion::new(0, 407, 123, 2, 96, 120);
-                }
-                else if self.potions[i-1].color == 4 {
-                    uvs[i] = SheetRegion::new(0, 165, 417, 2, 96, 120);
-                }
+            trfs[i] = AABB {
+                center: self.potions[i-1].pos,
+                size: Vec2 { x: 9.6, y: 12.0 },
+            }.into();
+            if self.potions[i-1].color == 0 {
+                uvs[i] = SheetRegion::new(0, 178, 1, 2, 96, 120);
+            }
+            else if self.potions[i-1].color == 1 {
+                uvs[i] = SheetRegion::new(0, 440, 1, 2, 80, 120);
+            }
+            else if self.potions[i-1].color == 2 {
+                uvs[i] = SheetRegion::new(0, 309, 123, 2, 96, 120);
+            }
+            else if self.potions[i-1].color == 3 {
+                uvs[i] = SheetRegion::new(0, 407, 123, 2, 96, 120);
+            }
+            else if self.potions[i-1].color == 4 {
+                uvs[i] = SheetRegion::new(0, 165, 417, 2, 96, 120);
             }
         }
 
