@@ -47,6 +47,7 @@ struct Game {
     potions_collected: Vec<i32>,
     font: engine::BitFont,
     state: GameState,
+    life: u32,
 }
 
 // function creates a new random position
@@ -113,7 +114,7 @@ impl engine::Game for Game {
         );
 
         // add Title group
-        let background_title_img = image::open("content/bgTitle.png").unwrap().into_rgba8();
+        let background_title_img = image::open("content-2/bgTitle.png").unwrap().into_rgba8();
         let background_title_tex = engine.renderer.gpu.create_texture(
             &background_title_img,
             wgpu::TextureFormat::Rgba8UnormSrgb,
@@ -128,8 +129,8 @@ impl engine::Game for Game {
             camera,
         );
 
-        // add End Game Bear Attack group
-        let background_bear_attack_img = image::open("content/bgBearAttack.png").unwrap().into_rgba8();
+        // add End Game wrong sequence
+        let background_bear_attack_img = image::open("content-2/wrong.png").unwrap().into_rgba8();
         let background_bear_attack_tex = engine.renderer.gpu.create_texture(
             &background_bear_attack_img,
             wgpu::TextureFormat::Rgba8UnormSrgb,
@@ -145,7 +146,7 @@ impl engine::Game for Game {
         );
 
         // add Instructions group
-        let background_instructions_img = image::open("content/campingInstructions.png").unwrap().into_rgba8();
+        let background_instructions_img = image::open("content-2/instruct.png").unwrap().into_rgba8();
         let background_instructions_tex = engine.renderer.gpu.create_texture(
             &background_instructions_img,
             wgpu::TextureFormat::Rgba8UnormSrgb,
@@ -161,7 +162,7 @@ impl engine::Game for Game {
         );
 
         // add Win group
-        let background_instructions_img = image::open("content/winFire.png").unwrap().into_rgba8();
+        let background_instructions_img = image::open("content-2/win.png").unwrap().into_rgba8();
         let background_instructions_tex = engine.renderer.gpu.create_texture(
             &background_instructions_img,
             wgpu::TextureFormat::Rgba8UnormSrgb,
@@ -176,8 +177,8 @@ impl engine::Game for Game {
             camera,
         );
 
-        // add Lose group
-        let background_instructions_img = image::open("content/Lose.jpg").unwrap().into_rgba8();
+        // add Lose group when time runs out
+        let background_instructions_img = image::open("content-2/time_up.png").unwrap().into_rgba8();
         let background_instructions_tex = engine.renderer.gpu.create_texture(
             &background_instructions_img,
             wgpu::TextureFormat::Rgba8UnormSrgb,
@@ -242,6 +243,7 @@ impl engine::Game for Game {
             potions_collected: Vec::new(),
             font: font,
             state: GameState::Title,
+            life: 1,
         }
     }
     fn update(&mut self, engine: &mut Engine) {
@@ -258,6 +260,10 @@ impl engine::Game for Game {
                 self.state = GameState::ShowLevel;
                 self.level_timer = Some(Instant::now());
             }
+            return;
+        }
+
+        else if self.state == GameState::Attack{
             return;
         }
 
@@ -491,7 +497,7 @@ impl engine::Game for Game {
                 size: Vec2 { x: W, y: H },
             }
             .into();
-            uvs_bg[0] = SheetRegion::new(0, 0, 0, 1, 533, 400);
+            uvs_bg[0] = SheetRegion::new(0, 0, 0, 1, 626, 416);
 
             engine
             .renderer
@@ -519,7 +525,7 @@ impl engine::Game for Game {
                 size: Vec2 { x: W, y: H },
             }
             .into();
-            uvs_bg[0] = SheetRegion::new(0, 0, 0, 1, 533, 400);
+            uvs_bg[0] = SheetRegion::new(0, 0, 0, 1, 626, 416);
 
             engine
             .renderer
@@ -544,7 +550,7 @@ impl engine::Game for Game {
                 size: Vec2 { x: W, y: H },
             }
             .into();
-            uvs_bg[0] = SheetRegion::new(0, 0, 0, 1, 533, 400);
+            uvs_bg[0] = SheetRegion::new(0, 0, 0, 1, 626, 416);
 
             // remove bg
             remove_background(0, engine);
@@ -575,7 +581,7 @@ impl engine::Game for Game {
                 size: Vec2 { x: W, y: H },
             }
             .into();
-            uvs_bg[0] = SheetRegion::new(0, 0, 0, 1, 533, 400);
+            uvs_bg[0] = SheetRegion::new(0, 0, 0, 1, 626, 416);
 
             // remove bg
             remove_background(0, engine);
@@ -606,7 +612,7 @@ impl engine::Game for Game {
                 size: Vec2 { x: W, y: H },
             }
             .into();
-            uvs_bg[0] = SheetRegion::new(0, 0, 0, 1, 533, 400);
+            uvs_bg[0] = SheetRegion::new(0, 0, 0, 1, 626, 416);
 
             // remove bg
             remove_background(0, engine);
