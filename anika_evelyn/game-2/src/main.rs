@@ -556,7 +556,7 @@ impl engine::Game for Game {
             remove_background(0, engine);
 
             // remove all other sprites
-            clear_sprites(engine, self.timer_length);
+            clear_sprites(engine);
 
             engine
             .renderer
@@ -587,7 +587,7 @@ impl engine::Game for Game {
             remove_background(0, engine);
 
             // remove all other sprites
-            clear_sprites(engine, self.timer_length);
+            clear_sprites(engine);
 
             engine
             .renderer
@@ -618,7 +618,7 @@ impl engine::Game for Game {
             remove_background(0, engine);
 
             // remove all other sprites
-            clear_sprites(engine, self.timer_length);
+            clear_sprites(engine);
 
             engine
             .renderer
@@ -636,7 +636,7 @@ impl engine::Game for Game {
             remove_background(4, engine);
 
             // remove all other sprites
-            clear_sprites(engine, self.timer_length);
+            clear_sprites(engine);
 
             // set bg image
             let (trfs_bg, uvs_bg) = engine.renderer.sprites.get_sprites_mut(0);
@@ -650,10 +650,35 @@ impl engine::Game for Game {
             .into();
             uvs_bg[0] = SheetRegion::new(0, 0, 0, 6, 626, 416);
 
+            let level_str = self.level.to_string();
+            let level_length = level_str.len();
+            engine.renderer.sprites.resize_sprite_group(
+                &engine.renderer.gpu,
+                7,
+                level_length,
+            );
+            self.font.draw_text(
+                &mut engine.renderer.sprites,
+                7,
+                0,
+                &level_str,
+                Vec2 { // put numbers in corner
+                    x: self.camera.screen_pos[0] + W / 2.0 + 10.0 - (19.0 * level_length as f32),
+                    y: self.camera.screen_pos[1] + H / 2.0 + 40.0,
+                }
+                .into(),
+                16.0,
+            );
+
             engine
             .renderer
             .sprites
             .upload_sprites(&engine.renderer.gpu, 0, 0..1);
+        
+            engine
+            .renderer
+            .sprites
+            .upload_sprites(&engine.renderer.gpu, 7, 0..level_length);
 
             // add potion sequence to screen
             //CHANGEEEE
@@ -765,6 +790,10 @@ impl engine::Game for Game {
         }
 
         // set timer
+        if self.level_timer.unwrap().elapsed().as_secs() >= self.total_time {
+            self.state = GameState::Lose;
+            return;
+        }
         let time_remaining = self.total_time - self.level_timer.unwrap().elapsed().as_secs();
         let timer_str = time_remaining.to_string();
         self.timer_length = timer_str.len();
@@ -809,7 +838,7 @@ fn main() {
 }
 
 
-fn clear_sprites(engine: &mut Engine, timer_len: usize) {
+fn clear_sprites(engine: &mut Engine) {
 
     // remove all other sprites
     let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(1);
@@ -825,7 +854,8 @@ fn clear_sprites(engine: &mut Engine, timer_len: usize) {
 
     // remove all fonts
     let (trfs, uvs) = engine.renderer.sprites.get_sprites_mut(7);
-    for i in 0..timer_len {
+    let num_sprites = trfs.len();
+    for i in 0..num_sprites {
         trfs[i] = Transform::zeroed();
         uvs[i] = SheetRegion::zeroed();
     }
@@ -833,7 +863,7 @@ fn clear_sprites(engine: &mut Engine, timer_len: usize) {
     engine
     .renderer
     .sprites
-    .upload_sprites(&engine.renderer.gpu, 7, 0..timer_len);
+    .upload_sprites(&engine.renderer.gpu, 7, 0..num_sprites);
 
 
 }
